@@ -1,5 +1,3 @@
-"use client";
-
 import { PageHeader } from "@/components/dashboard/page-header";
 import {
   Tabs,
@@ -8,14 +6,21 @@ import {
   TabsTrigger,
 } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { MachineFormDialog } from "@/components/machines/machine-form-dialog";
+import { MachinesList } from "@/components/machines/machines-list";
+import { listMachines } from "@/lib/actions/machines";
 
-export default function SettingsPage() {
+export const dynamic = "force-dynamic";
+
+export default async function SettingsPage() {
+  const machines = await listMachines();
+
   return (
     <div>
       <PageHeader
         eyebrow="Settings"
         title="الإعدادات"
-        description="إدارة ورشتك، فريق العمل، الاشتراك، والتكاملات."
+        description="إدارة ورشتك، فريق العمل، الماكينات، والاشتراك."
       />
 
       <Tabs defaultValue="workspace" className="w-full">
@@ -50,9 +55,7 @@ export default function SettingsPage() {
           <Card className="glass border-0 bg-card/40">
             <CardHeader>
               <CardTitle>معلومات الورشة</CardTitle>
-              <CardDescription>
-                اسم الورشة، الشعار، والمعلومات العامة.
-              </CardDescription>
+              <CardDescription>اسم الورشة، الشعار، والمعلومات العامة.</CardDescription>
             </CardHeader>
             <CardContent className="text-sm text-muted-foreground">
               قريباً — إعدادات الورشة الكاملة.
@@ -64,9 +67,7 @@ export default function SettingsPage() {
           <Card className="glass border-0 bg-card/40">
             <CardHeader>
               <CardTitle>أعضاء الفريق</CardTitle>
-              <CardDescription>
-                دعوة مصممين وإدارة الصلاحيات.
-              </CardDescription>
+              <CardDescription>دعوة مصممين وإدارة الصلاحيات.</CardDescription>
             </CardHeader>
             <CardContent className="text-sm text-muted-foreground">
               قريباً — يحتاج خطة Pro لدعوة أعضاء.
@@ -75,37 +76,25 @@ export default function SettingsPage() {
         </TabsContent>
 
         <TabsContent value="machines">
-          <Card className="glass border-0 bg-card/40">
-            <CardHeader>
-              <CardTitle>الماكينات المربوطة</CardTitle>
-              <CardDescription>
-                ربط ماكينات الورشة (Beam Saw، CNC، Edge Bander، إلخ) لإرسال
-                مخطط القص مباشرة.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="text-sm text-muted-foreground">
-              <p className="mb-3">
-                نظام Universal Machine Integration يدعم كل ماكينات الورش:
-              </p>
-              <ul className="list-inside list-disc space-y-1 text-xs">
-                <li>Beam Saw (منشار الألواح)</li>
-                <li>CNC Router (تفريز)</li>
-                <li>Edge Bander (لصق الحواف)</li>
-                <li>Drilling Machine (ثقب الـ Dowel)</li>
-                <li>Nesting Machine (التفريز الذكي)</li>
-              </ul>
-              <p className="mt-3 text-xs italic">قادم في Phase 3 من الـ Roadmap.</p>
-            </CardContent>
-          </Card>
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-lg font-semibold">الماكينات المربوطة</h3>
+                <p className="text-xs text-muted-foreground">
+                  أي ماكينة في الورشة (Beam Saw، CNC، Edge Bander، ...) قابلة للربط — تصدير DXF، G-Code، CSV، JSON.
+                </p>
+              </div>
+              {machines.length > 0 ? <MachineFormDialog /> : null}
+            </div>
+            <MachinesList machines={machines} />
+          </div>
         </TabsContent>
 
         <TabsContent value="billing">
           <Card className="glass border-0 bg-card/40">
             <CardHeader>
               <CardTitle>الخطة الحالية: مجانية</CardTitle>
-              <CardDescription>
-                مشروع واحد + 3 عملاء + قوالب أساسية.
-              </CardDescription>
+              <CardDescription>مشروع واحد + 3 عملاء + قوالب أساسية.</CardDescription>
             </CardHeader>
             <CardContent className="text-sm text-muted-foreground">
               قريباً — ترقية للخطة الاحترافية.

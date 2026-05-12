@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { ArrowLeft, Pen, Receipt, Scissors } from "lucide-react";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { getProject } from "@/lib/actions/projects";
+import { ExportButtons } from "@/components/projects/export-buttons";
 
 export const dynamic = "force-dynamic";
 
@@ -21,9 +22,7 @@ export default async function ProjectDetailPage({
         eyebrow="Project"
         title={project.name}
         description={
-          project.customer
-            ? `العميل: ${project.customer.name}`
-            : "بدون عميل مرتبط"
+          project.customer ? `العميل: ${project.customer.name}` : "بدون عميل مرتبط"
         }
         action={
           <Link
@@ -44,7 +43,7 @@ export default async function ProjectDetailPage({
             <Pen className="h-6 w-6 text-background" />
           </div>
           <div>
-            <h3 className="text-base font-bold">فتح المحرر</h3>
+            <h3 className="text-base font-bold">فتح المحرر 2D</h3>
             <p className="mt-1 text-xs text-muted-foreground">
               صمم المطبخ بسحب الوحدات على Canvas.
             </p>
@@ -66,7 +65,7 @@ export default async function ProjectDetailPage({
             </p>
           </div>
           <span className="mt-auto text-xs text-muted-foreground italic">
-            متاح بعد التصميم
+            متاح قريباً
           </span>
         </div>
 
@@ -75,13 +74,13 @@ export default async function ProjectDetailPage({
             <Scissors className="h-6 w-6 text-background" />
           </div>
           <div>
-            <h3 className="text-base font-bold">Cutting Diagram</h3>
+            <h3 className="text-base font-bold">تصدير للماكينات</h3>
             <p className="mt-1 text-xs text-muted-foreground">
-              توليد مخطط القص للماكينات.
+              DXF, G-Code, CSV, JSON للماكينات المختلفة.
             </p>
           </div>
           <span className="mt-auto text-xs text-muted-foreground italic">
-            متاح بعد التصميم
+            انزل للأسفل ↓
           </span>
         </div>
       </div>
@@ -104,6 +103,15 @@ export default async function ProjectDetailPage({
           <p className="whitespace-pre-wrap text-sm">{project.notes}</p>
         </div>
       ) : null}
+
+      {/* Export section */}
+      <div className="glass mt-8 rounded-2xl p-6">
+        <h3 className="mb-1 text-lg font-bold text-gradient">تصدير للماكينات</h3>
+        <p className="mb-5 text-xs text-muted-foreground">
+          صدّر التصميم بصيغة تطابق ماكينتك. الإصدارات الجاهزة: DXF (Beam Saw عام)، G-Code (CNC عام)، CSV، JSON.
+        </p>
+        <ExportButtons projectId={project.id} />
+      </div>
     </div>
   );
 }
