@@ -88,6 +88,7 @@ model Workspace {
   templates Template[]
   projects  Project[]
   machines  Machine[]
+  apiTokens ApiToken[]
 }
 
 model User {
@@ -104,6 +105,7 @@ model User {
   accounts    Account[]
   sessions    Session[]
   memberships Membership[]
+  apiTokens   ApiToken[]
 }
 
 model Membership {
@@ -117,6 +119,27 @@ model Membership {
   workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
 
   @@unique([userId, workspaceId])
+}
+
+// API tokens for programmatic access (MCP, REST, automation).
+// Only the SHA-256 hash is stored — plaintext is shown to the user exactly once
+// at creation time. `prefix` is the first 8 chars for display ("skdc_xxxxxxxx…").
+model ApiToken {
+  id          String    @id @default(cuid())
+  workspaceId String
+  userId      String
+  name        String
+  prefix      String
+  hash        String    @unique
+  lastUsedAt  DateTime?
+  createdAt   DateTime  @default(now())
+  revokedAt   DateTime?
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId])
+  @@index([hash])
 }
 
 // =====================================================================

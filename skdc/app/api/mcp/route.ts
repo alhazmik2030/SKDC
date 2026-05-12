@@ -27,6 +27,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { z } from "zod";
 import { auth } from "@/lib/auth";
 import { getCurrentWorkspace } from "@/lib/auth-helpers";
+import { verifyBearerToken } from "@/lib/api-tokens";
 import {
   ListTemplatesInput,
   ListCustomersInput,
@@ -200,27 +201,37 @@ function rpcError(code: number, message: string) {
 
 // ---------- HTTP handlers ----------
 export async function POST(request: NextRequest) {
-  const session = await auth();
-  if (!session?.user) {
-    return NextResponse.json(
-      { jsonrpc: "2.0", error: { code: -32000, message: "Unauthorized" }, id: null },
-      { status: 401 },
-    );
-  }
-
-  let workspaceId: string;
-  try {
-    const ws = await getCurrentWorkspace();
-    workspaceId = ws.workspace.id;
-  } catch (e) {
-    return NextResponse.json(
-      {
-        jsonrpc: "2.0",
-        error: { code: -32000, message: (e as Error).message },
-        id: null,
-      },
-      { status: 403 },
-    );
+  // Try Bearer token first (programmatic clients), then fall back to NextAuth session
+  // (works when the AI runs in the user's browser).
+  let workspaceId: string | null = null;
+  const bearer = await verifyBearerToken(request.headers.get("authorization"));
+  if (bearer) {
+    workspaceId = bearer.workspaceId;
+  } else {
+    const session = await auth();
+    if (!session?.user) {
+      return NextResponse.json(
+        {
+          jsonrpc: "2.0",
+          error: { code: -32000, message: "Unauthorized" },
+          id: null,
+        },
+        { status: 401 },
+      );
+    }
+    try {
+      const ws = await getCurrentWorkspace();
+      workspaceId = ws.workspace.id;
+    } catch (e) {
+      return NextResponse.json(
+        {
+          jsonrpc: "2.0",
+          error: { code: -32000, message: (e as Error).message },
+          id: null,
+        },
+        { status: 403 },
+      );
+    }
   }
 
   let body: JsonRpcRequest | JsonRpcRequest[];
@@ -239,10 +250,11 @@ export async function POST(request: NextRequest) {
 
   // Support batch
   const batch = Array.isArray(body) ? body : [body];
+  const ws = workspaceId as string;
   const responses = await Promise.all(
     batch.map(async (req) => {
       try {
-        const result = await handleRpc(req, workspaceId);
+        const result = await handleRpc(req, ws);
         if (result === null) return null; // notification — no response
         return { jsonrpc: "2.0", id: req.id ?? null, result };
       } catch (err) {

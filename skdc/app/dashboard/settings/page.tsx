@@ -1,3 +1,4 @@
+import { headers } from "next/headers";
 import { PageHeader } from "@/components/dashboard/page-header";
 import {
   Tabs,
@@ -8,12 +9,25 @@ import {
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { MachineFormDialog } from "@/components/machines/machine-form-dialog";
 import { MachinesList } from "@/components/machines/machines-list";
+import { ApiTokensCard } from "@/components/api/api-tokens-card";
 import { listMachines } from "@/lib/actions/machines";
+import { listTokens } from "@/lib/actions/api-tokens";
 
 export const dynamic = "force-dynamic";
 
+function tabClass() {
+  return "rounded-xl px-5 py-2 data-[state=active]:bg-gradient-to-br data-[state=active]:from-violet-500 data-[state=active]:to-fuchsia-500 data-[state=active]:text-white";
+}
+
 export default async function SettingsPage() {
-  const machines = await listMachines();
+  const [machines, tokens, hdrs] = await Promise.all([
+    listMachines(),
+    listTokens(),
+    headers(),
+  ]);
+  const host = hdrs.get("x-forwarded-host") ?? hdrs.get("host") ?? "skdc-production.up.railway.app";
+  const proto = hdrs.get("x-forwarded-proto") ?? "https";
+  const origin = `${proto}://${host}`;
 
   return (
     <div>
@@ -25,30 +39,11 @@ export default async function SettingsPage() {
 
       <Tabs defaultValue="workspace" className="w-full">
         <TabsList className="glass mb-6 h-auto gap-1 rounded-2xl bg-card/40 p-1.5">
-          <TabsTrigger
-            value="workspace"
-            className="rounded-xl px-5 py-2 data-[state=active]:bg-gradient-to-br data-[state=active]:from-violet-500 data-[state=active]:to-fuchsia-500 data-[state=active]:text-white"
-          >
-            الورشة
-          </TabsTrigger>
-          <TabsTrigger
-            value="team"
-            className="rounded-xl px-5 py-2 data-[state=active]:bg-gradient-to-br data-[state=active]:from-violet-500 data-[state=active]:to-fuchsia-500 data-[state=active]:text-white"
-          >
-            الفريق
-          </TabsTrigger>
-          <TabsTrigger
-            value="machines"
-            className="rounded-xl px-5 py-2 data-[state=active]:bg-gradient-to-br data-[state=active]:from-violet-500 data-[state=active]:to-fuchsia-500 data-[state=active]:text-white"
-          >
-            الماكينات
-          </TabsTrigger>
-          <TabsTrigger
-            value="billing"
-            className="rounded-xl px-5 py-2 data-[state=active]:bg-gradient-to-br data-[state=active]:from-violet-500 data-[state=active]:to-fuchsia-500 data-[state=active]:text-white"
-          >
-            الاشتراك
-          </TabsTrigger>
+          <TabsTrigger value="workspace" className={tabClass()}>الورشة</TabsTrigger>
+          <TabsTrigger value="team" className={tabClass()}>الفريق</TabsTrigger>
+          <TabsTrigger value="machines" className={tabClass()}>الماكينات</TabsTrigger>
+          <TabsTrigger value="api" className={tabClass()}>MCP &amp; API</TabsTrigger>
+          <TabsTrigger value="billing" className={tabClass()}>الاشتراك</TabsTrigger>
         </TabsList>
 
         <TabsContent value="workspace">
@@ -88,6 +83,10 @@ export default async function SettingsPage() {
             </div>
             <MachinesList machines={machines} />
           </div>
+        </TabsContent>
+
+        <TabsContent value="api">
+          <ApiTokensCard initialTokens={tokens} origin={origin} />
         </TabsContent>
 
         <TabsContent value="billing">
