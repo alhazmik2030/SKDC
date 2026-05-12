@@ -3,13 +3,14 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { db } from "@/lib/db";
-import { ProjectStatus } from "@prisma/client";
+import { ProjectStatus, DesignStyle } from "@prisma/client";
 import { requireWorkspaceId } from "@/lib/auth-helpers";
 
 const ProjectInput = z.object({
   name: z.string().min(2).max(120),
   customerId: z.string().cuid().optional().nullable().or(z.literal("")),
   status: z.nativeEnum(ProjectStatus).default("DRAFT"),
+  designStyle: z.nativeEnum(DesignStyle).optional().nullable(),
   roomWidth: z.coerce.number().positive().max(20_000).optional().nullable(),
   roomDepth: z.coerce.number().positive().max(20_000).optional().nullable(),
   roomHeight: z.coerce.number().positive().max(10_000).optional().nullable(),
@@ -44,6 +45,7 @@ export async function createProject(raw: unknown) {
       name: parsed.name,
       customerId: parsed.customerId || null,
       status: parsed.status,
+      designStyle: parsed.designStyle ?? null,
       roomWidth: parsed.roomWidth ?? null,
       roomDepth: parsed.roomDepth ?? null,
       roomHeight: parsed.roomHeight ?? null,
@@ -68,6 +70,7 @@ export async function updateProject(id: string, raw: unknown) {
       name: parsed.name,
       customerId: parsed.customerId || null,
       status: parsed.status,
+      designStyle: parsed.designStyle ?? null,
       roomWidth: parsed.roomWidth ?? null,
       roomDepth: parsed.roomDepth ?? null,
       roomHeight: parsed.roomHeight ?? null,

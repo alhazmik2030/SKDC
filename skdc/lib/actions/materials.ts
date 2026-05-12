@@ -12,6 +12,8 @@ const MaterialInput = z.object({
   color: z.string().max(40).optional().nullable(),
   thicknessMm: z.coerce.number().positive().max(200),
   pricePerM2: z.coerce.number().nonnegative().max(1_000_000),
+  glassTint: z.string().max(40).optional().nullable(),
+  glassFinish: z.string().max(40).optional().nullable(),
 });
 
 export type MaterialInputType = z.infer<typeof MaterialInput>;
@@ -27,8 +29,18 @@ export async function listMaterials() {
 export async function createMaterial(raw: unknown) {
   const workspaceId = await requireWorkspaceId();
   const parsed = MaterialInput.parse(raw);
+  const isGlass = parsed.type === "GLASS";
   const material = await db.material.create({
-    data: { workspaceId, ...parsed, color: parsed.color || null },
+    data: {
+      workspaceId,
+      name: parsed.name,
+      type: parsed.type,
+      color: parsed.color || null,
+      thicknessMm: parsed.thicknessMm,
+      pricePerM2: parsed.pricePerM2,
+      glassTint: isGlass ? parsed.glassTint || null : null,
+      glassFinish: isGlass ? parsed.glassFinish || null : null,
+    },
   });
   revalidatePath("/dashboard/materials");
   return material;
@@ -39,9 +51,18 @@ export async function updateMaterial(id: string, raw: unknown) {
   const parsed = MaterialInput.parse(raw);
   const existing = await db.material.findFirst({ where: { id, workspaceId } });
   if (!existing) throw new Error("NOT_FOUND");
+  const isGlass = parsed.type === "GLASS";
   const material = await db.material.update({
     where: { id },
-    data: { ...parsed, color: parsed.color || null },
+    data: {
+      name: parsed.name,
+      type: parsed.type,
+      color: parsed.color || null,
+      thicknessMm: parsed.thicknessMm,
+      pricePerM2: parsed.pricePerM2,
+      glassTint: isGlass ? parsed.glassTint || null : null,
+      glassFinish: isGlass ? parsed.glassFinish || null : null,
+    },
   });
   revalidatePath("/dashboard/materials");
   return material;

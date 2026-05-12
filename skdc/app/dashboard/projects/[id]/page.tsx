@@ -3,7 +3,9 @@ import { notFound } from "next/navigation";
 import { ArrowLeft, Pen, Receipt, Scissors } from "lucide-react";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { getProject } from "@/lib/actions/projects";
+import { listProjectInvoices } from "@/lib/actions/invoices";
 import { ExportButtons } from "@/components/projects/export-buttons";
+import { InvoiceActions } from "@/components/projects/invoice-actions";
 
 export const dynamic = "force-dynamic";
 
@@ -15,6 +17,7 @@ export default async function ProjectDetailPage({
   const { id } = await params;
   const project = await getProject(id);
   if (!project) notFound();
+  const invoices = await listProjectInvoices(id);
 
   return (
     <div>
@@ -104,8 +107,13 @@ export default async function ProjectDetailPage({
         </div>
       ) : null}
 
-      {/* Export section */}
+      {/* Invoices */}
       <div className="glass mt-8 rounded-2xl p-6">
+        <InvoiceActions projectId={project.id} invoices={invoices} />
+      </div>
+
+      {/* Export section */}
+      <div className="glass mt-4 rounded-2xl p-6">
         <h3 className="mb-1 text-lg font-bold text-gradient">تصدير للماكينات</h3>
         <p className="mb-5 text-xs text-muted-foreground">
           صدّر التصميم بصيغة تطابق ماكينتك. الإصدارات الجاهزة: DXF (Beam Saw عام)، G-Code (CNC عام)، CSV، JSON.

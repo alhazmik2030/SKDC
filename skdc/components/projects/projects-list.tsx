@@ -109,6 +109,7 @@ export function ProjectsList({
                     name: p.name,
                     customerId: p.customerId,
                     status: p.status,
+                    designStyle: p.designStyle,
                     roomWidth: p.roomWidth,
                     roomDepth: p.roomDepth,
                     roomHeight: p.roomHeight,

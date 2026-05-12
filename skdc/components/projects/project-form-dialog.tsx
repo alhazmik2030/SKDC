@@ -7,7 +7,7 @@ import { z } from "zod";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 import { Loader2, FolderPlus } from "lucide-react";
-import { ProjectStatus } from "@prisma/client";
+import { ProjectStatus, DesignStyle } from "@prisma/client";
 import {
   Dialog,
   DialogContent,
@@ -26,11 +26,20 @@ const Schema = z.object({
   name: z.string().min(2, "الاسم مطلوب"),
   customerId: z.string().optional(),
   status: z.nativeEnum(ProjectStatus).default("DRAFT"),
+  designStyle: z.nativeEnum(DesignStyle).optional().or(z.literal("")),
   roomWidth: z.coerce.number().positive().optional().or(z.literal("")),
   roomDepth: z.coerce.number().positive().optional().or(z.literal("")),
   roomHeight: z.coerce.number().positive().optional().or(z.literal("")),
   notes: z.string().optional(),
 });
+
+const STYLE_LABELS: Record<DesignStyle, string> = {
+  MODERN: "مودرن",
+  CLASSIC: "كلاسيك",
+  NEO_CLASSIC: "نيو كلاسيك",
+  INDUSTRIAL: "صناعي",
+  SCANDINAVIAN: "اسكندنافي",
+};
 
 type FormValues = z.input<typeof Schema>;
 
@@ -53,6 +62,7 @@ export function ProjectFormDialog({
     name: string;
     customerId: string | null;
     status: ProjectStatus;
+    designStyle: DesignStyle | null;
     roomWidth: number | null;
     roomDepth: number | null;
     roomHeight: number | null;
@@ -71,6 +81,7 @@ export function ProjectFormDialog({
       name: project?.name ?? "",
       customerId: project?.customerId ?? "",
       status: project?.status ?? "DRAFT",
+      designStyle: project?.designStyle ?? "",
       roomWidth: project?.roomWidth ?? undefined,
       roomDepth: project?.roomDepth ?? undefined,
       roomHeight: project?.roomHeight ?? undefined,
@@ -84,6 +95,7 @@ export function ProjectFormDialog({
         const payload = {
           ...values,
           customerId: values.customerId || null,
+          designStyle: values.designStyle || null,
           roomWidth: values.roomWidth === "" ? null : values.roomWidth,
           roomDepth: values.roomDepth === "" ? null : values.roomDepth,
           roomHeight: values.roomHeight === "" ? null : values.roomHeight,
@@ -162,6 +174,20 @@ export function ProjectFormDialog({
               </select>
             </Field>
           </div>
+
+          <Field label="نمط التصميم">
+            <select
+              {...form.register("designStyle")}
+              className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              <option value="">— بدون تحديد —</option>
+              {(Object.keys(STYLE_LABELS) as DesignStyle[]).map((s) => (
+                <option key={s} value={s}>
+                  {STYLE_LABELS[s]}
+                </option>
+              ))}
+            </select>
+          </Field>
 
           <div>
             <label className="mb-1.5 block text-xs font-medium text-muted-foreground">

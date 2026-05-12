@@ -27,9 +27,32 @@ const Schema = z.object({
   color: z.string().optional(),
   thicknessMm: z.coerce.number().positive("لازم رقم موجب"),
   pricePerM2: z.coerce.number().nonnegative("لازم رقم 0 أو أكبر"),
+  glassTint: z.string().optional(),
+  glassFinish: z.string().optional(),
 });
 
 type FormValues = z.input<typeof Schema>;
+
+const GLASS_TINTS = [
+  { value: "clear", label: "شفاف" },
+  { value: "bronze", label: "برونزي" },
+  { value: "smoked", label: "رمادي (Smoked)" },
+  { value: "milky-white", label: "أبيض حليبي" },
+  { value: "black", label: "أسود" },
+  { value: "green", label: "أخضر" },
+  { value: "blue", label: "أزرق" },
+];
+
+const GLASS_FINISHES = [
+  { value: "transparent", label: "شفاف عادي" },
+  { value: "frosted", label: "مصنفر (Frosted)" },
+  { value: "reflective", label: "عاكس" },
+  { value: "tempered", label: "مقسّى (Tempered)" },
+  { value: "laminated", label: "Laminated" },
+  { value: "patterned", label: "منقوش (Patterned)" },
+];
+
+const GLASS_THICKNESSES = [4, 5, 6, 8, 10, 12];
 
 const TYPE_LABELS: Record<MaterialType, string> = {
   HPL: "HPL",
@@ -54,6 +77,8 @@ export function MaterialFormDialog({
     color: string | null;
     thicknessMm: number;
     pricePerM2: number;
+    glassTint?: string | null;
+    glassFinish?: string | null;
   };
   trigger?: React.ReactNode;
 }) {
@@ -69,8 +94,23 @@ export function MaterialFormDialog({
       color: material?.color ?? "#FFFFFF",
       thicknessMm: material?.thicknessMm ?? 18,
       pricePerM2: material?.pricePerM2 ?? 0,
+      glassTint: material?.glassTint ?? "clear",
+      glassFinish: material?.glassFinish ?? "transparent",
     },
   });
+
+  const selectedType = form.watch("type");
+  const isGlass = selectedType === "GLASS";
+
+  // Auto-adjust thickness when switching to/from GLASS
+  React.useEffect(() => {
+    if (isGlass) {
+      const cur = Number(form.getValues("thicknessMm"));
+      if (cur === 18 || cur === 16) {
+        form.setValue("thicknessMm", 6);
+      }
+    }
+  }, [isGlass, form]);
 
   const onSubmit = (values: FormValues) => {
     startTransition(async () => {
@@ -164,7 +204,20 @@ export function MaterialFormDialog({
               required
               error={form.formState.errors.thicknessMm?.message}
             >
-              <Input type="number" step="0.1" min="0" {...form.register("thicknessMm")} />
+              {isGlass ? (
+                <select
+                  {...form.register("thicknessMm")}
+                  className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                >
+                  {GLASS_THICKNESSES.map((t) => (
+                    <option key={t} value={t}>
+                      {t} مم
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <Input type="number" step="0.1" min="0" {...form.register("thicknessMm")} />
+              )}
             </Field>
             <Field
               label="السعر (ر.س / م²)"
@@ -174,6 +227,41 @@ export function MaterialFormDialog({
               <Input type="number" step="0.01" min="0" {...form.register("pricePerM2")} />
             </Field>
           </div>
+
+          {/* Glass-specific fields */}
+          {isGlass ? (
+            <div className="space-y-3 rounded-xl border border-sky-400/30 bg-sky-500/5 p-4">
+              <div className="font-mono text-xs uppercase tracking-wider text-sky-300">
+                خصائص الزجاج
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <Field label="درجة الزجاج">
+                  <select
+                    {...form.register("glassTint")}
+                    className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  >
+                    {GLASS_TINTS.map((t) => (
+                      <option key={t.value} value={t.value}>
+                        {t.label}
+                      </option>
+                    ))}
+                  </select>
+                </Field>
+                <Field label="نوع التشطيب">
+                  <select
+                    {...form.register("glassFinish")}
+                    className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  >
+                    {GLASS_FINISHES.map((t) => (
+                      <option key={t.value} value={t.value}>
+                        {t.label}
+                      </option>
+                    ))}
+                  </select>
+                </Field>
+              </div>
+            </div>
+          ) : null}
 
           <DialogFooter className="gap-2 pt-2">
             <Button type="button" variant="ghost" onClick={() => setOpen(false)} disabled={isPending}>
