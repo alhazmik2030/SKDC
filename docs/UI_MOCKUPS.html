@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<title>SKDC — عينات تصميم</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700;800;900&family=Geist+Mono:wght@400;500&family=Cairo:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: 'Cairo', 'Geist', sans-serif;
+    background: #050505;
+    color: #fff;
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ===== Picker bar ===== */
+  .picker {
+    position: fixed;
+    top: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 1000;
+    display: flex;
+    gap: 8px;
+    padding: 8px;
+    background: rgba(10, 10, 10, 0.7);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 999px;
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+  }
+  .picker a {
+    padding: 10px 20px;
+    color: rgba(255, 255, 255, 0.6);
+    text-decoration: none;
+    border-radius: 999px;
+    font-size: 13px;
+    font-weight: 500;
+    transition: all 0.2s;
+  }
+  .picker a:hover { color: #fff; background: rgba(255, 255, 255, 0.05); }
+
+  .mockup-section { min-height: 100vh; position: relative; overflow: hidden; }
+
+  /* ===========================================================
+     STYLE A — Aurora Glassmorphism (Stripe / Linear vibe)
+     =========================================================== */
+  #style-a {
+    background:
+      radial-gradient(ellipse 80% 50% at 50% -20%, rgba(120, 119, 198, 0.3), transparent),
+      radial-gradient(ellipse 80% 50% at 80% 50%, rgba(56, 189, 248, 0.15), transparent),
+      radial-gradient(ellipse 80% 50% at 20% 80%, rgba(236, 72, 153, 0.15), transparent),
+      #050505;
+  }
+  #style-a .grid-bg {
+    position: absolute; inset: 0;
+    background-image:
+      linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+    background-size: 64px 64px;
+    mask-image: radial-gradient(ellipse at center, black 30%, transparent 70%);
+  }
+  #style-a .label {
+    position: absolute; top: 100px; right: 32px;
+    color: #38bdf8; font-size: 12px; font-weight: 600;
+    letter-spacing: 2px; text-transform: uppercase;
+    font-family: 'Geist Mono', monospace;
+  }
+  #style-a .container {
+    max-width: 1280px; margin: 0 auto; padding: 160px 32px 80px;
+    position: relative; z-index: 1;
+  }
+  #style-a .hero-badge {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 8px 16px;
+    background: rgba(56, 189, 248, 0.1);
+    border: 1px solid rgba(56, 189, 248, 0.3);
+    border-radius: 999px;
+    font-size: 13px; color: #7dd3fc;
+    margin-bottom: 32px;
+    animation: float 6s ease-in-out infinite;
+  }
+  #style-a .hero-badge::before {
+    content: ''; width: 6px; height: 6px;
+    background: #38bdf8; border-radius: 50%;
+    box-shadow: 0 0 12px #38bdf8;
+    animation: pulse 2s ease-in-out infinite;
+  }
+  #style-a h1 {
+    font-size: clamp(48px, 8vw, 96px);
+    font-weight: 800;
+    line-height: 1.05;
+    letter-spacing: -0.03em;
+    margin-bottom: 32px;
+    background: linear-gradient(180deg, #fff 0%, rgba(255,255,255,0.5) 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  #style-a h1 .accent {
+    background: linear-gradient(135deg, #c084fc 0%, #f0abfc 50%, #38bdf8 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  #style-a .subtitle {
+    font-size: 20px; line-height: 1.6;
+    color: rgba(255,255,255,0.6);
+    max-width: 600px; margin-bottom: 48px;
+  }
+  #style-a .cta-row { display: flex; gap: 16px; flex-wrap: wrap; }
+  #style-a .btn-primary {
+    padding: 16px 32px;
+    background: linear-gradient(135deg, #fff 0%, #e0e7ff 100%);
+    color: #050505;
+    border: none; border-radius: 12px;
+    font-size: 15px; font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 0 0 1px rgba(255,255,255,0.1), 0 20px 40px -10px rgba(120,119,198,0.5);
+  }
+  #style-a .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 0 0 1px rgba(255,255,255,0.2), 0 30px 60px -10px rgba(120,119,198,0.7); }
+  #style-a .btn-secondary {
+    padding: 16px 32px;
+    background: rgba(255,255,255,0.05);
+    color: #fff;
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 12px;
+    font-size: 15px; font-weight: 500;
+    backdrop-filter: blur(10px);
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  #style-a .btn-secondary:hover { background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.2); }
+
+  #style-a .preview-card {
+    margin-top: 80px;
+    padding: 8px;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 24px;
+    backdrop-filter: blur(20px);
+    box-shadow: 0 50px 100px -20px rgba(0,0,0,0.7);
+  }
+  #style-a .preview-card-inner {
+    aspect-ratio: 16/9;
+    border-radius: 16px;
+    background:
+      linear-gradient(135deg, rgba(120,119,198,0.1), rgba(56,189,248,0.1)),
+      #0a0a0a;
+    display: flex; align-items: center; justify-content: center;
+    color: rgba(255,255,255,0.3); font-size: 14px;
+    position: relative; overflow: hidden;
+  }
+  #style-a .preview-card-inner::before {
+    content: ''; position: absolute; inset: 0;
+    background: radial-gradient(circle at 30% 50%, rgba(120,119,198,0.3), transparent 50%);
+    animation: drift 10s ease-in-out infinite;
+  }
+  #style-a .preview-card-inner span {
+    position: relative; z-index: 1;
+    padding: 12px 24px;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 999px;
+    backdrop-filter: blur(20px);
+  }
+
+  /* ===========================================================
+     STYLE B — Neon Premium Dark (Vercel / Resend vibe)
+     =========================================================== */
+  #style-b { background: #000; position: relative; }
+  #style-b::before {
+    content: ''; position: absolute; inset: 0;
+    background:
+      radial-gradient(ellipse at 50% 0%, rgba(16, 185, 129, 0.15), transparent 60%),
+      radial-gradient(ellipse at 0% 100%, rgba(99, 102, 241, 0.1), transparent 60%);
+    pointer-events: none;
+  }
+  #style-b .label {
+    position: absolute; top: 100px; right: 32px;
+    color: #10b981; font-size: 12px; font-weight: 600;
+    letter-spacing: 2px; text-transform: uppercase;
+    font-family: 'Geist Mono', monospace; z-index: 2;
+  }
+  #style-b .container {
+    max-width: 1280px; margin: 0 auto; padding: 160px 32px 80px;
+    position: relative; z-index: 1;
+  }
+  #style-b .scan-line {
+    position: absolute; inset: 0;
+    background:
+      repeating-linear-gradient(
+        0deg,
+        transparent 0px,
+        transparent 2px,
+        rgba(255,255,255,0.01) 3px,
+        rgba(255,255,255,0.01) 4px
+      );
+    pointer-events: none;
+    z-index: 1;
+  }
+  #style-b .hero-tag {
+    display: inline-flex; align-items: center; gap: 12px;
+    padding: 6px 16px 6px 6px;
+    background: rgba(16,185,129,0.05);
+    border: 1px solid rgba(16,185,129,0.2);
+    border-radius: 999px;
+    font-size: 13px; color: rgba(255,255,255,0.8);
+    margin-bottom: 32px;
+    font-family: 'Geist Mono', monospace;
+  }
+  #style-b .hero-tag .tag-dot {
+    padding: 2px 8px;
+    background: #10b981; color: #000;
+    border-radius: 999px;
+    font-size: 11px; font-weight: 700;
+  }
+  #style-b h1 {
+    font-family: 'Geist', sans-serif;
+    font-size: clamp(56px, 9vw, 120px);
+    font-weight: 900;
+    line-height: 0.95;
+    letter-spacing: -0.04em;
+    margin-bottom: 40px;
+    color: #fff;
+  }
+  #style-b h1 .glow {
+    display: inline-block;
+    color: #10b981;
+    text-shadow:
+      0 0 20px rgba(16,185,129,0.6),
+      0 0 40px rgba(16,185,129,0.4),
+      0 0 80px rgba(16,185,129,0.2);
+    animation: flicker 4s ease-in-out infinite;
+  }
+  #style-b .subtitle {
+    font-size: 18px; line-height: 1.7;
+    color: rgba(255,255,255,0.5);
+    max-width: 600px; margin-bottom: 48px;
+    font-family: 'Geist Mono', monospace;
+  }
+  #style-b .cta-row { display: flex; gap: 12px; flex-wrap: wrap; }
+  #style-b .btn-neon {
+    padding: 14px 28px;
+    background: #10b981;
+    color: #000;
+    border: none; border-radius: 8px;
+    font-family: 'Geist Mono', monospace;
+    font-size: 14px; font-weight: 700;
+    cursor: pointer;
+    text-transform: uppercase; letter-spacing: 1px;
+    box-shadow: 0 0 0 1px #10b981, 0 0 30px rgba(16,185,129,0.5);
+    transition: all 0.2s;
+  }
+  #style-b .btn-neon:hover { box-shadow: 0 0 0 1px #10b981, 0 0 50px rgba(16,185,129,0.8); transform: translateY(-1px); }
+  #style-b .btn-ghost {
+    padding: 14px 28px;
+    background: transparent;
+    color: rgba(255,255,255,0.7);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 8px;
+    font-family: 'Geist Mono', monospace;
+    font-size: 14px; font-weight: 600;
+    cursor: pointer;
+    text-transform: uppercase; letter-spacing: 1px;
+    transition: all 0.2s;
+  }
+  #style-b .btn-ghost:hover { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.3); color: #fff; }
+
+  #style-b .stats-grid {
+    margin-top: 80px;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1px;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.05);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+  #style-b .stat {
+    padding: 32px;
+    background: #050505;
+    transition: background 0.2s;
+  }
+  #style-b .stat:hover { background: #0a0a0a; }
+  #style-b .stat-num {
+    font-family: 'Geist Mono', monospace;
+    font-size: 40px; font-weight: 700;
+    background: linear-gradient(135deg, #10b981, #6366f1);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 4px;
+  }
+  #style-b .stat-label {
+    font-size: 12px;
+    color: rgba(255,255,255,0.4);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-family: 'Geist Mono', monospace;
+  }
+
+  /* ===========================================================
+     STYLE C — Apple/Arc Minimalist Premium
+     =========================================================== */
+  #style-c {
+    background: linear-gradient(180deg, #fafafa 0%, #f0f0f0 100%);
+    color: #0a0a0a;
+  }
+  #style-c .label {
+    position: absolute; top: 100px; right: 32px;
+    color: #666; font-size: 12px; font-weight: 600;
+    letter-spacing: 2px; text-transform: uppercase;
+  }
+  #style-c .container {
+    max-width: 1200px; margin: 0 auto; padding: 160px 32px 80px;
+    text-align: center;
+  }
+  #style-c .pretitle {
+    font-size: 14px; font-weight: 600;
+    color: #ff453a;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    margin-bottom: 24px;
+  }
+  #style-c h1 {
+    font-family: 'Geist', sans-serif;
+    font-size: clamp(56px, 9vw, 120px);
+    font-weight: 800;
+    line-height: 1.0;
+    letter-spacing: -0.04em;
+    margin-bottom: 32px;
+    color: #0a0a0a;
+  }
+  #style-c h1 .gradient {
+    background: linear-gradient(135deg, #ff453a 0%, #ff9500 50%, #ffcc00 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  #style-c .subtitle {
+    font-size: 22px;
+    line-height: 1.4;
+    color: #444;
+    max-width: 700px;
+    margin: 0 auto 48px;
+  }
+  #style-c .cta-row {
+    display: flex; gap: 16px; justify-content: center; flex-wrap: wrap;
+  }
+  #style-c .btn-apple {
+    padding: 14px 36px;
+    background: #0a0a0a;
+    color: #fff;
+    border: none; border-radius: 999px;
+    font-size: 16px; font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  #style-c .btn-apple:hover { background: #333; transform: scale(1.02); }
+  #style-c .btn-link {
+    padding: 14px 28px;
+    background: transparent;
+    color: #0066cc;
+    border: none;
+    font-size: 16px; font-weight: 500;
+    cursor: pointer;
+  }
+  #style-c .btn-link::after {
+    content: ' →'; transition: transform 0.2s; display: inline-block;
+  }
+  #style-c .btn-link:hover::after { transform: translateX(4px); }
+
+  #style-c .device-frame {
+    margin-top: 80px;
+    aspect-ratio: 16/10;
+    background: #1a1a1a;
+    border-radius: 24px;
+    padding: 16px;
+    box-shadow: 0 60px 120px -30px rgba(0,0,0,0.3);
+    border: 1px solid rgba(0,0,0,0.1);
+    position: relative;
+  }
+  #style-c .device-screen {
+    width: 100%; height: 100%;
+    background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 100%);
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    color: rgba(255,255,255,0.4);
+  }
+
+  /* ===== shared animations ===== */
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-8px); }
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+  @keyframes drift {
+    0%, 100% { transform: translate(0, 0); }
+    50% { transform: translate(100px, 50px); }
+  }
+  @keyframes flicker {
+    0%, 100% { opacity: 1; }
+    97% { opacity: 1; }
+    98% { opacity: 0.4; }
+    99% { opacity: 1; }
+  }
+
+  /* ===== Comparison footer ===== */
+  .footer-compare {
+    background: #0a0a0a;
+    padding: 80px 32px;
+    text-align: center;
+    border-top: 1px solid rgba(255,255,255,0.05);
+  }
+  .footer-compare h2 {
+    font-size: 36px;
+    font-weight: 800;
+    margin-bottom: 16px;
+    background: linear-gradient(135deg, #fff, rgba(255,255,255,0.5));
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .footer-compare p {
+    color: rgba(255,255,255,0.5);
+    margin-bottom: 32px;
+  }
+  .compare-grid {
+    max-width: 900px; margin: 0 auto;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+  }
+  .compare-card {
+    padding: 24px;
+    background: rgba(255,255,255,0.02);
+    border: 1px solid rgba(255,255,255,0.05);
+    border-radius: 12px;
+    text-align: right;
+  }
+  .compare-card h3 { font-size: 16px; margin-bottom: 8px; color: #fff; }
+  .compare-card p { font-size: 13px; color: rgba(255,255,255,0.5); line-height: 1.6; margin: 0; }
+</style>
+</head>
+<body>
+
+<nav class="picker">
+  <a href="#style-a">A · Aurora</a>
+  <a href="#style-b">B · Neon</a>
+  <a href="#style-c">C · Minimal</a>
+</nav>
+
+<!-- =========== STYLE A : Aurora Glassmorphism =========== -->
+<section id="style-a" class="mockup-section">
+  <div class="grid-bg"></div>
+  <div class="label">STYLE A — Aurora Glass</div>
+  <div class="container">
+    <div class="hero-badge">منتج عربي حديث · سحابي 100%</div>
+    <h1>
+      صمّم مطبخك<br>
+      <span class="accent">بذكاء سحابي</span>
+    </h1>
+    <p class="subtitle">
+      منصة سحابية ذكية لتصميم المطابخ بقوالب جاهزة قابلة للتعديل،
+      توليد فاتورة ومخطط قص تلقائياً، ودعم 3 لغات.
+    </p>
+    <div class="cta-row">
+      <button class="btn-primary">جرّب مجاناً</button>
+      <button class="btn-secondary">شاهد العرض ↗</button>
+    </div>
+    <div class="preview-card">
+      <div class="preview-card-inner">
+        <span>محرر 3D — معاينة فورية</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- =========== STYLE B : Neon Premium Dark =========== -->
+<section id="style-b" class="mockup-section">
+  <div class="scan-line"></div>
+  <div class="label">STYLE B — Neon Dark</div>
+  <div class="container">
+    <div class="hero-tag">
+      <span class="tag-dot">NEW</span>
+      <span>محرر 3D + Cutting Diagram + AI</span>
+    </div>
+    <h1>
+      مطابخ<br>
+      <span class="glow">ذكية</span><br>
+      للتصنيع.
+    </h1>
+    <p class="subtitle">
+      // من فكرة → تصميم 3D → مخطط قص → فاتورة<br>
+      // خلال 5 دقائق. بدون SketchUp. بدون تثبيت.
+    </p>
+    <div class="cta-row">
+      <button class="btn-neon">START FREE</button>
+      <button class="btn-ghost">DOCS</button>
+    </div>
+    <div class="stats-grid">
+      <div class="stat">
+        <div class="stat-num">3D</div>
+        <div class="stat-label">Editor</div>
+      </div>
+      <div class="stat">
+        <div class="stat-num">3</div>
+        <div class="stat-label">Languages</div>
+      </div>
+      <div class="stat">
+        <div class="stat-num">MCP</div>
+        <div class="stat-label">AI Ready</div>
+      </div>
+      <div class="stat">
+        <div class="stat-num">95%</div>
+        <div class="stat-label">Img → Design</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- =========== STYLE C : Apple Minimalist =========== -->
+<section id="style-c" class="mockup-section">
+  <div class="label">STYLE C — Minimalist Premium</div>
+  <div class="container">
+    <div class="pretitle">SKDC · KITCHEN INTELLIGENCE</div>
+    <h1>
+      Design.<br>
+      Manufacture.<br>
+      <span class="gradient">Reimagined.</span>
+    </h1>
+    <p class="subtitle">
+      منصة سحابية واحدة. من فكرة العميل حتى مخطط القص في الورشة.
+    </p>
+    <div class="cta-row">
+      <button class="btn-apple">ابدأ مجاناً</button>
+      <button class="btn-link">شاهد العرض</button>
+    </div>
+    <div class="device-frame">
+      <div class="device-screen">معاينة المنتج</div>
+    </div>
+  </div>
+</section>
+
+<!-- =========== Footer comparison =========== -->
+<section class="footer-compare">
+  <h2>الستايلات الثلاثة — أيهما يناسب رؤيتك؟</h2>
+  <p>تنبّه: هذه عينات ثابتة. المنتج النهائي راح يضيف framer-motion + 3D + parallax + smooth scroll.</p>
+  <div class="compare-grid">
+    <div class="compare-card">
+      <h3>A · Aurora Glass</h3>
+      <p>الأنسب لـ <strong>SaaS عصري</strong> يستهدف شركات وعملاء محترفين. شبيه Linear و Stripe. التوازن بين الفخامة والوضوح.</p>
+    </div>
+    <div class="compare-card">
+      <h3>B · Neon Dark</h3>
+      <p>الأنسب لـ <strong>تموضع تقني قوي</strong>. يقول "نحن متقدمون جداً". شبيه Vercel و Resend. يجذب المطورين والتقنيين.</p>
+    </div>
+    <div class="compare-card">
+      <h3>C · Minimalist Premium</h3>
+      <p>الأنسب لـ <strong>الفخامة الهادئة</strong>. شبيه Apple و Arc. يستهدف عملاء راقيين يقدّرون البساطة المتقنة.</p>
+    </div>
+  </div>
+</section>
+
+</body>
+</html>
