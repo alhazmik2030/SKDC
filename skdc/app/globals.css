@@ -184,4 +184,23 @@
     animation: name-shine 6s ease-in-out infinite;
     filter: drop-shadow(0 0 24px rgba(167, 139, 250, 0.4));
   }
+  .text-shine-saudi {
+    background: linear-gradient(
+      90deg,
+      #059669 0%,
+      #10b981 18%,
+      #6ee7b7 32%,
+      #ffffff 50%,
+      #6ee7b7 68%,
+      #10b981 82%,
+      #059669 100%
+    );
+    background-size: 200% 100%;
+    background-clip: text;
+    -webkit-background-clip: text;
+    color: transparent;
+    -webkit-text-fill-color: transparent;
+    animation: name-shine 5s ease-in-out infinite;
+    filter: drop-shadow(0 0 28px rgba(16, 185, 129, 0.5));
+  }
 }

@@ -361,32 +361,41 @@ export default function LandingPage() {
               <div className="glass relative overflow-hidden rounded-2xl p-8 text-center">
                 <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-violet-500/5 via-transparent to-sky-500/5" />
                 <div className="relative">
-                  <div className="font-mono text-xs uppercase tracking-[0.3em] text-violet-300">
+                  <div className="font-mono text-xs uppercase tracking-[0.3em] text-emerald-300">
                     Founder · المؤسس
                   </div>
-                  <div className="relative mt-3 inline-block">
+
+                  {/* Saudi flag above the name */}
+                  <div className="mt-5 flex justify-center">
+                    <div className="relative inline-flex h-10 w-16 items-center justify-center overflow-hidden rounded-md shadow-lg shadow-emerald-500/30 ring-1 ring-emerald-400/30">
+                      <span className="text-3xl leading-none">🇸🇦</span>
+                    </div>
+                  </div>
+
+                  <div className="relative mt-6 inline-block">
                     {/* Halo glow behind the name */}
                     <div
                       className="pointer-events-none absolute left-1/2 top-1/2 -z-10 h-32 w-64"
                       style={{
                         background:
-                          "radial-gradient(ellipse, rgba(167, 139, 250, 0.4) 0%, rgba(56, 189, 248, 0.2) 40%, transparent 70%)",
+                          "radial-gradient(ellipse, rgba(16, 185, 129, 0.45) 0%, rgba(110, 231, 183, 0.25) 40%, transparent 70%)",
                         filter: "blur(30px)",
                         animation: "name-halo 4s ease-in-out infinite",
                       }}
                     />
-                    {/* The shining name */}
-                    <div className="text-shine-aurora text-4xl font-black tracking-tight md:text-5xl">
+                    {/* The shining name in Saudi green */}
+                    <div className="text-shine-saudi text-4xl font-black tracking-tight md:text-5xl">
                       خالد الحازمي
                     </div>
-                    {/* Sparkle decorations */}
-                    <Sparkles className="absolute -right-6 -top-2 h-4 w-4 animate-pulse text-violet-300" />
+                    {/* Sparkle decorations in green */}
+                    <Sparkles className="absolute -right-6 -top-2 h-4 w-4 animate-pulse text-emerald-300" />
                     <Sparkles
-                      className="absolute -left-6 -bottom-1 h-3 w-3 animate-pulse text-sky-300"
+                      className="absolute -left-6 -bottom-1 h-3 w-3 animate-pulse text-emerald-200"
                       style={{ animationDelay: "1s" }}
                     />
                   </div>
-                  <div className="mt-3 font-mono text-xs text-muted-foreground">
+
+                  <div className="mt-8 font-mono text-xs text-muted-foreground">
                     تأسيس · 15 مايو 2026 · الرياض، المملكة العربية السعودية
                   </div>
                   <div className="mx-auto mt-6 h-px w-24 bg-gradient-to-r from-transparent via-violet-400/50 to-transparent" />
