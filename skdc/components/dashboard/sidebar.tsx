@@ -17,25 +17,27 @@ import {
   PanelRightOpen,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useI18n } from "@/components/i18n-provider";
 
 type NavItem = {
   href: string;
-  label: string;
+  labelKey: string;
   icon: React.ComponentType<{ className?: string }>;
 };
 
 const NAV: NavItem[] = [
-  { href: "/dashboard", label: "الرئيسية", icon: Home },
-  { href: "/dashboard/customers", label: "العملاء", icon: Users },
-  { href: "/dashboard/materials", label: "الخامات", icon: Layers },
-  { href: "/dashboard/templates", label: "القوالب", icon: Box },
-  { href: "/dashboard/projects", label: "المشاريع", icon: FolderKanban },
-  { href: "/dashboard/designer", label: "محرر التصميم", icon: PenTool },
-  { href: "/dashboard/settings", label: "الإعدادات", icon: Settings },
+  { href: "/dashboard", labelKey: "nav.home", icon: Home },
+  { href: "/dashboard/customers", labelKey: "nav.customers", icon: Users },
+  { href: "/dashboard/materials", labelKey: "nav.materials", icon: Layers },
+  { href: "/dashboard/templates", labelKey: "nav.templates", icon: Box },
+  { href: "/dashboard/projects", labelKey: "nav.projects", icon: FolderKanban },
+  { href: "/dashboard/designer", labelKey: "nav.designer", icon: PenTool },
+  { href: "/dashboard/settings", labelKey: "nav.settings", icon: Settings },
 ];
 
 export function Sidebar() {
   const pathname = usePathname();
+  const { t } = useI18n();
   const [collapsed, setCollapsed] = React.useState(false);
 
   return (
@@ -142,7 +144,7 @@ export function Sidebar() {
                         transition={{ duration: 0.15 }}
                         className="whitespace-nowrap"
                       >
-                        {item.label}
+                        {t(item.labelKey)}
                       </motion.span>
                     )}
                   </AnimatePresence>

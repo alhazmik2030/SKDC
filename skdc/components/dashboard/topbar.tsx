@@ -4,8 +4,14 @@ import { motion } from "framer-motion";
 import { Bell, Search, SunMoon } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { UserMenu } from "@/components/dashboard/user-menu";
+import { LanguageSwitcher } from "@/components/language-switcher";
+import { useI18n } from "@/components/i18n-provider";
+import { useThemeSwitcher } from "@/components/theme-switcher";
 
 export function Topbar() {
+  const { t } = useI18n();
+  const themeSwitcher = useThemeSwitcher();
+
   return (
     <motion.header
       initial={{ y: -20, opacity: 0 }}
@@ -18,7 +24,7 @@ export function Topbar() {
         <div className="relative w-full max-w-sm">
           <Search className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
-            placeholder="ابحث في كل شيء..."
+            placeholder={t("topbar.search")}
             className="h-10 rounded-xl border-white/[0.06] bg-white/[0.03] pl-14 pr-10 text-sm placeholder:text-muted-foreground/70 focus-visible:border-violet-400/40 focus-visible:ring-violet-400/20"
           />
           <kbd className="pointer-events-none absolute left-3 top-1/2 hidden -translate-y-1/2 select-none items-center gap-1 rounded-md border border-border bg-white/[0.04] px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground sm:inline-flex">
@@ -29,10 +35,14 @@ export function Topbar() {
 
       {/* ===== Right cluster (visual-left in RTL) ===== */}
       <div className="flex items-center gap-2">
-        {/* Theme toggle (placeholder) */}
+        {/* Language switcher — flags */}
+        <LanguageSwitcher variant="compact" />
+
+        {/* Theme toggle */}
         <button
           type="button"
-          aria-label="تبديل المظهر"
+          aria-label={t("userMenu.theme")}
+          onClick={() => themeSwitcher.open()}
           className="grid h-9 w-9 place-items-center rounded-full border border-border bg-white/[0.02] text-muted-foreground transition-colors hover:bg-white/[0.05] hover:text-foreground"
         >
           <SunMoon className="h-4 w-4" />
@@ -41,7 +51,7 @@ export function Topbar() {
         {/* Notifications */}
         <button
           type="button"
-          aria-label="الإشعارات"
+          aria-label="Notifications"
           className="relative grid h-9 w-9 place-items-center rounded-full border border-border bg-white/[0.02] text-muted-foreground transition-colors hover:bg-white/[0.05] hover:text-foreground"
         >
           <Bell className="h-4 w-4" />

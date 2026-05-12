@@ -5,6 +5,7 @@ import { SmoothScroll } from "@/components/effects/smooth-scroll";
 import { ThemeProvider } from "@/components/theme-provider";
 import { ThemeSwitcherProvider } from "@/components/theme-switcher";
 import { SessionProvider } from "@/components/session-provider";
+import { I18nProvider } from "@/components/i18n-provider";
 import "./globals.css";
 
 const geist = Geist({
@@ -42,11 +43,13 @@ export default function RootLayout({
         className={`${cairo.variable} ${geist.variable} ${geistMono.variable} font-arabic antialiased min-h-full`}
       >
         <SessionProvider>
-          <ThemeProvider>
-            <ThemeSwitcherProvider>
-              <SmoothScroll>{children}</SmoothScroll>
-            </ThemeSwitcherProvider>
-          </ThemeProvider>
+          <I18nProvider>
+            <ThemeProvider>
+              <ThemeSwitcherProvider>
+                <SmoothScroll>{children}</SmoothScroll>
+              </ThemeSwitcherProvider>
+            </ThemeProvider>
+          </I18nProvider>
         </SessionProvider>
         <Toaster
           position="top-center"

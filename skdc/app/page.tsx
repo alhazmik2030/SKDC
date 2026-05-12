@@ -19,6 +19,7 @@ import { AuroraBackground } from "@/components/effects/aurora-background";
 import { Magnetic } from "@/components/effects/magnetic";
 import { Reveal } from "@/components/effects/reveal";
 import { TiltCard } from "@/components/effects/tilt-card";
+import { LanguageSwitcher } from "@/components/language-switcher";
 
 export default function LandingPage() {
   const heroRef = useRef<HTMLDivElement>(null);
@@ -65,6 +66,7 @@ export default function LandingPage() {
               </Link>
             ))}
           </div>
+          <LanguageSwitcher variant="compact" />
           <Magnetic strength={0.2}>
             <Link
               href="/sign-in"
