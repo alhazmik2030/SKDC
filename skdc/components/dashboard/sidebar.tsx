@@ -47,13 +47,13 @@ export function Sidebar() {
       transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
       className="glass relative flex h-screen shrink-0 flex-col overflow-hidden border-l border-border/60 bg-sidebar/60"
     >
-      {/* Subtle aurora glow at the top */}
+      {/* Subtle aurora glow at the top — driven by the active theme. */}
       <div
         aria-hidden
         className="pointer-events-none absolute -top-24 left-1/2 h-48 w-48 -translate-x-1/2 rounded-full opacity-50"
         style={{
           background:
-            "radial-gradient(circle, rgba(167, 139, 250, 0.25) 0%, transparent 70%)",
+            "radial-gradient(circle, var(--theme-halo, rgba(167,139,250,0.25)) 0%, transparent 70%)",
           filter: "blur(40px)",
         }}
       />
@@ -62,9 +62,21 @@ export function Sidebar() {
       <div className="relative flex items-center gap-3 px-5 pb-4 pt-6">
         <Link href="/dashboard" className="flex items-center gap-2.5 font-bold tracking-wide">
           <div className="relative h-8 w-8 shrink-0">
-            <div className="absolute inset-0 rounded-md bg-gradient-to-br from-violet-400 via-fuchsia-400 to-sky-400" />
+            <div
+              className="absolute inset-0 rounded-md"
+              style={{
+                background:
+                  "linear-gradient(135deg, var(--theme-stop-1,#a78bfa) 0%, var(--theme-stop-2,#f0abfc) 50%, var(--theme-stop-3,#38bdf8) 100%)",
+              }}
+            />
             <div className="absolute inset-[2px] rounded-[5px] bg-background" />
-            <div className="absolute inset-[6px] rounded-sm bg-gradient-to-br from-violet-400 to-sky-400" />
+            <div
+              className="absolute inset-[6px] rounded-sm"
+              style={{
+                background:
+                  "linear-gradient(135deg, var(--theme-stop-1,#a78bfa) 0%, var(--theme-stop-3,#38bdf8) 100%)",
+              }}
+            />
           </div>
           <AnimatePresence initial={false}>
             {!collapsed && (
@@ -91,7 +103,15 @@ export function Sidebar() {
             collapsed && "justify-center px-2",
           )}
         >
-          <div className="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-gradient-to-br from-violet-500 to-fuchsia-500 text-[11px] font-bold text-white shadow-md shadow-violet-500/30">
+          <div
+            className="grid h-7 w-7 shrink-0 place-items-center rounded-lg text-[11px] font-bold text-white shadow-md"
+            style={{
+              background:
+                "linear-gradient(135deg, var(--theme-stop-1,#a78bfa) 0%, var(--theme-stop-2,#f0abfc) 100%)",
+              boxShadow:
+                "0 4px 12px -2px var(--theme-halo, rgba(167,139,250,0.4))",
+            }}
+          >
             و
           </div>
           <AnimatePresence initial={false}>
@@ -126,10 +146,20 @@ export function Sidebar() {
               <li key={item.href}>
                 <Link
                   href={item.href}
+                  style={
+                    active
+                      ? {
+                          background:
+                            "linear-gradient(135deg, var(--theme-stop-1,#a78bfa) 0%, var(--theme-stop-2,#f0abfc) 100%)",
+                          boxShadow:
+                            "0 10px 25px -10px var(--theme-halo, rgba(167,139,250,0.5))",
+                        }
+                      : undefined
+                  }
                   className={cn(
                     "group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all",
                     active
-                      ? "bg-gradient-to-br from-violet-500 to-fuchsia-500 text-white shadow-lg shadow-violet-500/30"
+                      ? "text-white"
                       : "text-muted-foreground hover:bg-white/5 hover:text-foreground",
                     collapsed && "justify-center px-0",
                   )}
@@ -149,7 +179,7 @@ export function Sidebar() {
                     )}
                   </AnimatePresence>
 
-                  {/* Active pill ambient glow */}
+                  {/* Active pill ambient glow — driven by active theme */}
                   {active && (
                     <motion.span
                       layoutId="nav-active-glow"
@@ -157,7 +187,7 @@ export function Sidebar() {
                       className="pointer-events-none absolute inset-0 -z-10 rounded-xl"
                       style={{
                         boxShadow:
-                          "0 0 0 1px rgba(167,139,250,0.25), 0 18px 40px -16px rgba(192,132,252,0.45)",
+                          "0 0 0 1px var(--theme-stop-1, rgba(167,139,250,0.25)), 0 18px 40px -16px var(--theme-halo, rgba(192,132,252,0.45))",
                       }}
                       transition={{ type: "spring", stiffness: 300, damping: 30 }}
                     />

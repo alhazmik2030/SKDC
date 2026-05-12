@@ -16,7 +16,13 @@ import { listTokens } from "@/lib/actions/api-tokens";
 export const dynamic = "force-dynamic";
 
 function tabClass() {
-  return "rounded-xl px-5 py-2 data-[state=active]:bg-gradient-to-br data-[state=active]:from-violet-500 data-[state=active]:to-fuchsia-500 data-[state=active]:text-white";
+  // Tailwind's arbitrary value lets us reference CSS vars at the data-state hook,
+  // so the active tab gradient follows the user's chosen theme.
+  return [
+    "rounded-xl px-5 py-2 data-[state=active]:text-white",
+    "data-[state=active]:bg-[linear-gradient(135deg,var(--theme-stop-1,#a78bfa)_0%,var(--theme-stop-2,#f0abfc)_100%)]",
+    "data-[state=active]:shadow-[0_10px_25px_-10px_var(--theme-halo,rgba(167,139,250,0.5))]",
+  ].join(" ");
 }
 
 export default async function SettingsPage() {

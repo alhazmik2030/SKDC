@@ -19,6 +19,13 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { createMaterial, updateMaterial } from "@/lib/actions/materials";
 
 const Schema = z.object({
@@ -170,22 +177,27 @@ export function MaterialFormDialog({
 
           <div className="grid grid-cols-2 gap-3">
             <Field label="النوع" required>
-              <select
-                {...form.register("type")}
-                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              <Select
+                value={form.watch("type")}
+                onValueChange={(v) => form.setValue("type", v as MaterialType)}
               >
-                {(Object.keys(TYPE_LABELS) as MaterialType[]).map((t) => (
-                  <option key={t} value={t}>
-                    {TYPE_LABELS[t]}
-                  </option>
-                ))}
-              </select>
+                <SelectTrigger className="h-10 w-full">
+                  <SelectValue placeholder="اختر النوع" />
+                </SelectTrigger>
+                <SelectContent>
+                  {(Object.keys(TYPE_LABELS) as MaterialType[]).map((t) => (
+                    <SelectItem key={t} value={t}>
+                      {TYPE_LABELS[t]}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </Field>
             <Field label="اللون">
               <div className="flex items-center gap-2">
                 <Input
                   type="color"
-                  className="h-9 w-12 cursor-pointer p-1"
+                  className="h-10 w-12 cursor-pointer p-1"
                   {...form.register("color")}
                 />
                 <Input
@@ -205,16 +217,21 @@ export function MaterialFormDialog({
               error={form.formState.errors.thicknessMm?.message}
             >
               {isGlass ? (
-                <select
-                  {...form.register("thicknessMm")}
-                  className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                <Select
+                  value={String(form.watch("thicknessMm"))}
+                  onValueChange={(v) => form.setValue("thicknessMm", Number(v))}
                 >
-                  {GLASS_THICKNESSES.map((t) => (
-                    <option key={t} value={t}>
-                      {t} مم
-                    </option>
-                  ))}
-                </select>
+                  <SelectTrigger className="h-10 w-full">
+                    <SelectValue placeholder="اختر السماكة" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {GLASS_THICKNESSES.map((t) => (
+                      <SelectItem key={t} value={String(t)}>
+                        {t} مم
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               ) : (
                 <Input type="number" step="0.1" min="0" {...form.register("thicknessMm")} />
               )}
@@ -236,28 +253,38 @@ export function MaterialFormDialog({
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <Field label="درجة الزجاج">
-                  <select
-                    {...form.register("glassTint")}
-                    className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  <Select
+                    value={form.watch("glassTint") ?? "clear"}
+                    onValueChange={(v) => form.setValue("glassTint", String(v ?? "clear"))}
                   >
-                    {GLASS_TINTS.map((t) => (
-                      <option key={t.value} value={t.value}>
-                        {t.label}
-                      </option>
-                    ))}
-                  </select>
+                    <SelectTrigger className="h-10 w-full">
+                      <SelectValue placeholder="اختر الدرجة" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {GLASS_TINTS.map((t) => (
+                        <SelectItem key={t.value} value={t.value}>
+                          {t.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </Field>
                 <Field label="نوع التشطيب">
-                  <select
-                    {...form.register("glassFinish")}
-                    className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  <Select
+                    value={form.watch("glassFinish") ?? "transparent"}
+                    onValueChange={(v) => form.setValue("glassFinish", String(v ?? "transparent"))}
                   >
-                    {GLASS_FINISHES.map((t) => (
-                      <option key={t.value} value={t.value}>
-                        {t.label}
-                      </option>
-                    ))}
-                  </select>
+                    <SelectTrigger className="h-10 w-full">
+                      <SelectValue placeholder="اختر التشطيب" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {GLASS_FINISHES.map((t) => (
+                        <SelectItem key={t.value} value={t.value}>
+                          {t.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </Field>
               </div>
             </div>
