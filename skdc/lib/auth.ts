@@ -14,6 +14,9 @@ import { providers } from "@/lib/auth.config";
 export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: PrismaAdapter(db),
   providers,
+  // Accept any host header — required when NEXTAUTH_URL doesn't exactly
+  // match the host (e.g. Railway *.up.railway.app domains).
+  trustHost: true,
   // JWT session strategy — works in Edge runtime (middleware).
   // User/Account/VerificationToken are still in DB via PrismaAdapter,
   // but the session itself lives in a signed cookie.
