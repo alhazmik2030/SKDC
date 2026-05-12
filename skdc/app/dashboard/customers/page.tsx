@@ -11,9 +11,9 @@ export default async function CustomersPage() {
   return (
     <div>
       <PageHeader
-        eyebrow="Customers"
-        title="العملاء"
-        description="إدارة قاعدة عملاء ورشتك وربط المشاريع بهم."
+        eyebrowKey="page.customers.eyebrow"
+        titleKey="page.customers.title"
+        descriptionKey="page.customers.description"
         action={customers.length > 0 ? <CustomerFormDialog /> : undefined}
       />
 

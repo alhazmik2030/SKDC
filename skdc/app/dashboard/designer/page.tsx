@@ -24,9 +24,9 @@ export default async function DesignerEntryPage({
     return (
       <div>
         <PageHeader
-          eyebrow="Designer"
-          title="محرر التصميم"
-          description="ابدأ تصميم أول مطبخ — كل تصميم يُربط بمشروع."
+          eyebrowKey="page.designer.eyebrow"
+          titleKey="page.designer.title"
+          descriptionKey="page.designer.description"
         />
         <div className="glass relative overflow-hidden rounded-3xl p-10 text-center">
           <div
@@ -67,9 +67,9 @@ export default async function DesignerEntryPage({
   return (
     <div>
       <PageHeader
-        eyebrow="Designer"
-        title="اختر المشروع للتصميم"
-        description="كل مشروع له لوحة تصميم خاصة. اختر مشروعاً للدخول للمحرر."
+        eyebrowKey="page.designer.eyebrow"
+        titleKey="page.designer.picker.title"
+        descriptionKey="page.designer.picker.description"
         action={
           <Link
             href="/dashboard/projects"

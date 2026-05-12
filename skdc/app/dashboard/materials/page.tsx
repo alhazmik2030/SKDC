@@ -11,9 +11,9 @@ export default async function MaterialsPage() {
   return (
     <div>
       <PageHeader
-        eyebrow="Materials"
-        title="الخامات"
-        description="إدارة خاماتك وأسعارها — HPL، UVLACK، MELAMIN، MDF، POLYLACK، خشب طبيعي."
+        eyebrowKey="page.materials.eyebrow"
+        titleKey="page.materials.title"
+        descriptionKey="page.materials.description"
         action={materials.length > 0 ? <MaterialFormDialog /> : undefined}
       />
 

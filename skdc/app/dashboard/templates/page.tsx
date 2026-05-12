@@ -12,9 +12,9 @@ export default async function TemplatesPage() {
   return (
     <div>
       <PageHeader
-        eyebrow="Templates"
-        title="القوالب"
-        description="مكتبة قوالب جاهزة + إمكانية بناء قوالب خاصة بورشتك. كل قالب قابل للتخصيص قبل الدمج."
+        eyebrowKey="page.templates.eyebrow"
+        titleKey="page.templates.title"
+        descriptionKey="page.templates.description"
         action={
           <Link
             href="/dashboard/templates/new"

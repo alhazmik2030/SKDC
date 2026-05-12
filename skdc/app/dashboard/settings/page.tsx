@@ -10,6 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { MachineFormDialog } from "@/components/machines/machine-form-dialog";
 import { MachinesList } from "@/components/machines/machines-list";
 import { ApiTokensCard } from "@/components/api/api-tokens-card";
+import { T } from "@/components/i18n-text";
 import { listMachines } from "@/lib/actions/machines";
 import { listTokens } from "@/lib/actions/api-tokens";
 
@@ -38,18 +39,18 @@ export default async function SettingsPage() {
   return (
     <div>
       <PageHeader
-        eyebrow="Settings"
-        title="الإعدادات"
-        description="إدارة ورشتك، فريق العمل، الماكينات، والاشتراك."
+        eyebrowKey="page.settings.eyebrow"
+        titleKey="page.settings.title"
+        descriptionKey="page.settings.description"
       />
 
       <Tabs defaultValue="workspace" className="w-full">
         <TabsList className="glass mb-6 h-auto gap-1 rounded-2xl bg-card/40 p-1.5">
-          <TabsTrigger value="workspace" className={tabClass()}>الورشة</TabsTrigger>
-          <TabsTrigger value="team" className={tabClass()}>الفريق</TabsTrigger>
-          <TabsTrigger value="machines" className={tabClass()}>الماكينات</TabsTrigger>
-          <TabsTrigger value="api" className={tabClass()}>MCP &amp; API</TabsTrigger>
-          <TabsTrigger value="billing" className={tabClass()}>الاشتراك</TabsTrigger>
+          <TabsTrigger value="workspace" className={tabClass()}><T k="page.settings.tab.workspace" /></TabsTrigger>
+          <TabsTrigger value="team" className={tabClass()}><T k="page.settings.tab.team" /></TabsTrigger>
+          <TabsTrigger value="machines" className={tabClass()}><T k="page.settings.tab.machines" /></TabsTrigger>
+          <TabsTrigger value="api" className={tabClass()}><T k="page.settings.tab.api" /></TabsTrigger>
+          <TabsTrigger value="billing" className={tabClass()}><T k="page.settings.tab.billing" /></TabsTrigger>
         </TabsList>
 
         <TabsContent value="workspace">

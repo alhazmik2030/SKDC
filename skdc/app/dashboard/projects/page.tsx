@@ -13,9 +13,9 @@ export default async function ProjectsPage() {
   return (
     <div>
       <PageHeader
-        eyebrow="Projects"
-        title="المشاريع"
-        description="إدارة كل مشاريع التصميم — من المسودة إلى التصنيع."
+        eyebrowKey="page.projects.eyebrow"
+        titleKey="page.projects.title"
+        descriptionKey="page.projects.description"
         action={
           projects.length > 0 ? <ProjectFormDialog customers={customerStubs} /> : undefined
         }
