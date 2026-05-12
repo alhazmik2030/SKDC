@@ -96,6 +96,7 @@ model User {
   email         String    @unique
   emailVerified DateTime?
   image         String?
+  passwordHash  String?
   locale        Locale    @default(AR)
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt

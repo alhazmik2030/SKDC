@@ -1,53 +1,75 @@
+import Credentials from "next-auth/providers/credentials";
+import Google from "next-auth/providers/google";
 import type { EmailConfig } from "next-auth/providers/email";
+import type { Provider } from "next-auth/providers";
 import { Resend } from "resend";
+import bcrypt from "bcryptjs";
+import { z } from "zod";
+import { db } from "@/lib/db";
 
 /**
- * Email provider for SKDC.
+ * SKDC Auth providers — fast & professional.
  *
- * - Production: sends magic links via Resend.
- *   Requires `RESEND_API_KEY` env var. `EMAIL_FROM` defaults to the
- *   Resend onboarding sender (good for first deploy without a verified domain).
+ *   1. Credentials (email + password)  — instant, no email service needed
+ *   2. Google OAuth                    — one-click sign-in for everyone
+ *   3. Email magic link (Resend)       — kept as backup, works once domain is verified
  *
- * - Development / fallback: prints the magic-link URL to the server console
- *   so you can build and test the full auth flow without any email service.
- *
- * The provider auto-selects based on env vars: if `RESEND_API_KEY` exists,
- * we send real emails. Otherwise we print to console.
+ * Env vars (set in Railway):
+ *   AUTH_GOOGLE_ID            — Google OAuth Client ID
+ *   AUTH_GOOGLE_SECRET        — Google OAuth Client Secret
+ *   RESEND_API_KEY            — (optional) for magic links
+ *   EMAIL_FROM                — (optional) sender address
  */
 
+// ----------- Credentials provider -----------
+const CredentialsSchema = z.object({
+  email: z.string().email().toLowerCase(),
+  password: z.string().min(1),
+});
+
+const credentialsProvider = Credentials({
+  id: "credentials",
+  name: "Email + Password",
+  credentials: {
+    email: { label: "Email", type: "email" },
+    password: { label: "Password", type: "password" },
+  },
+  async authorize(raw) {
+    let parsed: { email: string; password: string };
+    try {
+      parsed = CredentialsSchema.parse(raw);
+    } catch {
+      return null;
+    }
+    const user = await db.user.findUnique({ where: { email: parsed.email } });
+    if (!user || !user.passwordHash) return null;
+    const ok = await bcrypt.compare(parsed.password, user.passwordHash);
+    if (!ok) return null;
+    return {
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      image: user.image,
+    };
+  },
+});
+
+// ----------- Google provider (conditional on env) -----------
+const HAS_GOOGLE = !!(process.env.AUTH_GOOGLE_ID && process.env.AUTH_GOOGLE_SECRET);
+const googleProvider = HAS_GOOGLE
+  ? Google({
+      clientId: process.env.AUTH_GOOGLE_ID!,
+      clientSecret: process.env.AUTH_GOOGLE_SECRET!,
+    })
+  : null;
+
+// ----------- Email magic link (Resend) -----------
 const HAS_RESEND = !!process.env.RESEND_API_KEY;
 const FROM_ADDR = process.env.EMAIL_FROM || "SKDC <onboarding@resend.dev>";
-
 const resend = HAS_RESEND ? new Resend(process.env.RESEND_API_KEY) : null;
 
 function magicLinkHtml(url: string): string {
-  return `<!doctype html>
-<html lang="ar" dir="rtl">
-  <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Tahoma, sans-serif; background: #0a0a0a; color: #fff; margin: 0; padding: 40px 20px;">
-    <table role="presentation" style="max-width: 480px; margin: 0 auto; background: #141414; border-radius: 16px; padding: 32px; border: 1px solid #2a2a2a;">
-      <tr><td>
-        <div style="font-size: 12px; letter-spacing: 2px; color: #a78bfa; text-transform: uppercase; margin-bottom: 8px;">SKDC</div>
-        <h1 style="margin: 0 0 16px 0; font-size: 28px; background: linear-gradient(135deg, #c084fc, #f0abfc, #38bdf8); -webkit-background-clip: text; background-clip: text; color: transparent;">رابط الدخول</h1>
-        <p style="margin: 0 0 24px 0; color: #a3a3a3; line-height: 1.6;">
-          اضغط على الزر لتسجيل الدخول إلى حسابك في SKDC.
-          الرابط صالح لمدة 24 ساعة.
-        </p>
-        <a href="${url}" style="display: inline-block; background: linear-gradient(135deg, #fff, #e0e7ff); color: #0a0a0a; padding: 14px 28px; border-radius: 12px; text-decoration: none; font-weight: 600; font-size: 15px;">
-          الدخول إلى SKDC
-        </a>
-        <p style="margin: 24px 0 0 0; color: #525252; font-size: 12px;">
-          لو ما طلبت هذا الرابط، تجاهل هذه الرسالة بأمان.
-        </p>
-        <p style="margin: 12px 0 0 0; color: #525252; font-size: 11px; word-break: break-all;">
-          أو انسخ الرابط: ${url}
-        </p>
-      </td></tr>
-    </table>
-    <p style="text-align: center; margin: 24px 0 0 0; color: #525252; font-size: 11px;">
-      SKDC · Smart Kitchen Design Cloud
-    </p>
-  </body>
-</html>`;
+  return `<!doctype html><html lang="ar" dir="rtl"><body style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Tahoma,sans-serif;background:#0a0a0a;color:#fff;margin:0;padding:40px 20px;"><table role="presentation" style="max-width:480px;margin:0 auto;background:#141414;border-radius:16px;padding:32px;border:1px solid #2a2a2a;"><tr><td><div style="font-size:12px;letter-spacing:2px;color:#a78bfa;text-transform:uppercase;margin-bottom:8px;">SKDC</div><h1 style="margin:0 0 16px 0;font-size:28px;background:linear-gradient(135deg,#c084fc,#f0abfc,#38bdf8);-webkit-background-clip:text;background-clip:text;color:transparent;">رابط الدخول</h1><p style="margin:0 0 24px 0;color:#a3a3a3;line-height:1.6;">اضغط على الزر لتسجيل الدخول إلى حسابك في SKDC.</p><a href="${url}" style="display:inline-block;background:linear-gradient(135deg,#fff,#e0e7ff);color:#0a0a0a;padding:14px 28px;border-radius:12px;text-decoration:none;font-weight:600;font-size:15px;">الدخول إلى SKDC</a></td></tr></table></body></html>`;
 }
 
 const emailProvider: EmailConfig = {
@@ -56,11 +78,7 @@ const emailProvider: EmailConfig = {
   name: "Email",
   from: FROM_ADDR,
   maxAge: 24 * 60 * 60,
-  server: {
-    host: "localhost",
-    port: 25,
-    auth: { user: "x", pass: "x" },
-  },
+  server: { host: "localhost", port: 25, auth: { user: "x", pass: "x" } },
   options: {},
   async sendVerificationRequest({ identifier, url }) {
     if (resend) {
@@ -76,12 +94,10 @@ const emailProvider: EmailConfig = {
         }
         return;
       } catch (err) {
-        // Fall through to console so the user can still recover.
         // eslint-disable-next-line no-console
         console.error("[auth] Resend send failed:", err);
       }
     }
-
     /* eslint-disable no-console */
     console.log("\n\n========== SKDC MAGIC LINK ==========");
     console.log(`To:   ${identifier}`);
@@ -91,4 +107,9 @@ const emailProvider: EmailConfig = {
   },
 };
 
-export const providers: EmailConfig[] = [emailProvider];
+// ----------- Combined export -----------
+const providersList: Provider[] = [credentialsProvider];
+if (googleProvider) providersList.push(googleProvider);
+providersList.push(emailProvider);
+
+export const providers = providersList;
