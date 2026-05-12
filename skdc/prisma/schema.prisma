@@ -87,6 +87,7 @@ model Workspace {
   materials Material[]
   templates Template[]
   projects  Project[]
+  machines  Machine[]
 }
 
 model User {
@@ -222,10 +223,11 @@ model Project {
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
 
-  workspace Workspace  @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  customer  Customer?  @relation(fields: [customerId], references: [id], onDelete: SetNull)
-  design    Design?
-  invoices  Invoice[]
+  workspace      Workspace        @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  customer       Customer?        @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  design         Design?
+  invoices       Invoice[]
+  machineExports MachineExport[]
 
   @@index([workspaceId])
   @@index([customerId])
@@ -296,4 +298,106 @@ model Invoice {
 
   @@unique([projectId, number])
   @@index([projectId])
+}
+
+// =====================================================================
+// UNIVERSAL MACHINE INTEGRATION
+// Workshops connect any cutting/drilling/edge-banding machine to SKDC.
+// =====================================================================
+
+enum MachineCategory {
+  BEAM_SAW
+  PANEL_SAW
+  CNC_ROUTER
+  NESTING_CNC
+  EDGE_BANDER
+  DRILLING_MACHINE
+  BORING_MACHINE
+  MEMBRANE_PRESS
+  POSTFORMING
+  MULTI_FUNCTION
+}
+
+enum MachineFormat {
+  DXF
+  DWG
+  GCODE
+  WOODWOP_MPR
+  BIESSE_BPP
+  BIESSE_CIX
+  SCM_XXL
+  FELDER_PRO
+  HOMAG_BHX
+  ARDIS_OPTIMIZER
+  OPTIMIK
+  CSV
+  JSON
+  PDF_REPORT
+}
+
+enum MachineChannel {
+  FILE_DOWNLOAD
+  FILE_UPLOAD_FTP
+  REST_API
+  WEBSOCKET
+  MQTT
+  OPC_UA
+  USB_AGENT
+}
+
+enum MachineExportStatus {
+  PENDING
+  READY
+  SENT
+  FAILED
+}
+
+model Machine {
+  id              String          @id @default(cuid())
+  workspaceId     String
+  name            String
+  manufacturer    String
+  model           String?
+  adapterId       String // matches one of MACHINE_REGISTRY ids
+  category        MachineCategory
+  preferredFormat MachineFormat
+  channel         MachineChannel  @default(FILE_DOWNLOAD)
+
+  // Optional connection details for direct channels (FTP, REST, MQTT, etc.)
+  endpoint        String? // URL / host
+  credentials     Json?   @default("{}") // encrypted at app-level; never expose
+
+  isActive        Boolean  @default(true)
+  notes           String?  @db.Text
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  workspace       Workspace        @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  exports         MachineExport[]
+
+  @@index([workspaceId])
+  @@index([adapterId])
+}
+
+model MachineExport {
+  id          String              @id @default(cuid())
+  projectId   String
+  machineId   String?
+  adapterId   String // archived for traceability even if machine deleted
+  format      MachineFormat
+  status      MachineExportStatus @default(PENDING)
+  fileUrl     String? // R2/S3 location of the generated file
+  filename    String
+  meta        Json                @default("{}") // adapter-specific metadata
+  jobId       String? // tracking id when transmitted to machine directly
+  errorMessage String?            @db.Text
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+
+  project Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  machine Machine? @relation(fields: [machineId], references: [id], onDelete: SetNull)
+
+  @@index([projectId])
+  @@index([machineId])
+  @@index([status])
 }

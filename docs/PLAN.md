@@ -447,6 +447,100 @@ Invoice (الفاتورة)
 
 ---
 
+## 13. Universal Machine Integration — ربط كل ماكينات الورش
+
+### 13.1 الفكرة
+
+كل ورشة في السوق تستخدم خليط من الماكينات (Beam Saw + CNC + Edge Bander + Drilling...). معظم البرامج المنافسة تدعم ماكينة أو ماركة محددة. **SKDC يدعم الجميع** عبر طبقة **Plug-in Adapter** موحدة.
+
+### 13.2 المعمارية (موجودة في `lib/machines/`)
+
+```
+المصمم → CutPlan (canonical) → MachineAdapter.encode() → File/Stream → الماكينة
+```
+
+- **CutPlan** = الصيغة الموحدة (canonical) لكل القطع والترتيب على الألواح.
+- **MachineAdapter** = interface واحد. كل ماركة/صيغة لها adapter صغير يحول CutPlan لـ payload الماكينة.
+- **Registry** (`MACHINE_REGISTRY`) يحتفظ بكل الـ adapters المدعومة، مع `status` (READY/BETA/PLANNED).
+
+### 13.3 الماكينات المدعومة (Categories)
+
+| الفئة | الوصف | أمثلة |
+|------|--------|---------|
+| BEAM_SAW | منشار الألواح | Homag, Holzma, Selco, الصينية |
+| PANEL_SAW | منشار بانل أبسط | شبه آلي |
+| CNC_ROUTER | راوتر تفريز | الصينية المنتشرة |
+| NESTING_CNC | تفريز ذكي (يقص + يفرز) | Biesse Rover |
+| EDGE_BANDER | لصق حواف | Homag, Brandt |
+| DRILLING_MACHINE | تثقيب Dowel | Homag BHX, Biesse Skipper |
+| BORING_MACHINE | تخريم متعدد | multi-spindle |
+| MEMBRANE_PRESS | مكبس غشاء PVC | Wemhöner, Italpresse |
+| POSTFORMING | تشكيل كاونتر | Holzma |
+| MULTI_FUNCTION | متعددة | combo machines |
+
+### 13.4 الصيغ المخرجة (14 صيغة)
+
+DXF, DWG, GCODE, WOODWOP_MPR (Homag), BIESSE_BPP/CIX, SCM_XXL, FELDER_PRO, HOMAG_BHX, ARDIS_OPTIMIZER, OPTIMIK, CSV, JSON, PDF_REPORT.
+
+### 13.5 قنوات الإرسال (Channels)
+
+- `FILE_DOWNLOAD` — المستخدم يحمل الملف ويغذيه يدوياً (افتراضي).
+- `FILE_UPLOAD_FTP` — الموقع يرفع لـ FTP الماكينة.
+- `REST_API` — الماكينة عندها REST API (الحديثة).
+- `WEBSOCKET` — اتصال مستمر للماكينات الذكية.
+- `MQTT` — IoT broker (Industry 4.0).
+- `OPC_UA` — معيار صناعي (PLC).
+- `USB_AGENT` — agent محلي يستقبل الملف.
+
+### 13.6 جدول البيانات (مطبّق على Supabase)
+
+```prisma
+model Machine {
+  workspaceId, name, manufacturer, model,
+  adapterId, category, preferredFormat, channel,
+  endpoint?, credentials? (encrypted), isActive, notes
+}
+
+model MachineExport {
+  projectId, machineId?, adapterId, format, status,
+  fileUrl?, filename, meta, jobId?, errorMessage?
+}
+```
+
+### 13.7 الحالة الحالية (READY الآن)
+
+✅ DXF Generic Beam Saw
+✅ G-Code Generic CNC
+✅ CSV (جدول قطع)
+✅ JSON (للـ ERP)
+
+📋 Planned (stubs جاهزة في `lib/machines/adapters/`):
+- Homag WoodWop MPR + BHX
+- Biesse BPP + CIX (Rover)
+- PDF Report بصرياً
+
+### 13.8 المراحل التنفيذية
+
+| المرحلة | المحتوى |
+|---------|--------|
+| Phase 3 | واجهة UI: Settings → الماكينات → إضافة ماكينة |
+| Phase 4 | DXF حقيقي مع nesting كامل (bin-packing) |
+| Phase 5 | WoodWop, BIESSE, Homag BHX |
+| Phase 6 | Direct integration (REST, MQTT, OPC-UA) |
+
+### 13.9 سيناريوهات الاستخدام
+
+**سيناريو 1: ورشة صغيرة بمنشار صيني**
+> المالك يصمم المطبخ → "تصدير لمنشار الألواح" → يحمل DXF → يفتحه في برنامج المنشار → يبدأ القص.
+
+**سيناريو 2: ورشة احترافية بـ Homag**
+> المصمم يضغط "إرسال للماكينات" → SKDC يولد WoodWop + BHX + Edge CSV → يرفع لـ FTP الماكينات → Homag يبدأ تلقائياً.
+
+**سيناريو 3: مصنع Industry 4.0**
+> ERP المصنع يستلم Webhook من SKDC → ينشئ Work Order → الماكينات الذكية (Biesse + Homag) تستلم عبر MQTT → التصنيع يبدأ بدون تدخل بشري.
+
+---
+
 ## 12. ميزة Image-to-Design — تحويل الصورة إلى تصميم بالذكاء الاصطناعي
 
 ### 12.1 الفكرة
