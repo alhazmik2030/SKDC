@@ -147,7 +147,16 @@ enum MaterialType {
   MDF
   PLYLACK
   WOOD
+  GLASS
   OTHER
+}
+
+enum DesignStyle {
+  MODERN
+  CLASSIC
+  NEO_CLASSIC
+  INDUSTRIAL
+  SCANDINAVIAN
 }
 
 model Material {
@@ -158,6 +167,9 @@ model Material {
   color       String?
   thicknessMm Float        @default(18)
   pricePerM2  Float        @default(0)
+  // Glass-only metadata
+  glassTint   String? // e.g. "clear", "smoked", "bronze", "frosted-milk"
+  glassFinish String? // e.g. "transparent", "frosted", "reflective", "tempered"
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
 
@@ -215,6 +227,7 @@ model Project {
   customerId  String?
   name        String
   status      ProjectStatus @default(DRAFT)
+  designStyle DesignStyle?
   // Room dimensions in millimeters
   roomWidth   Float?
   roomDepth   Float?

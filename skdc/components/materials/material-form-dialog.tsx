@@ -39,6 +39,7 @@ const TYPE_LABELS: Record<MaterialType, string> = {
   MDF: "MDF",
   PLYLACK: "PLYLACK",
   WOOD: "خشب طبيعي",
+  GLASS: "زجاج",
   OTHER: "أخرى",
 };
 
