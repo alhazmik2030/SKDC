@@ -5,23 +5,25 @@ import type { EmailConfig } from "next-auth/providers/email";
  *
  * Instead of sending a real email, the magic-link URL is printed to the
  * server console. This lets us build and test the full auth flow without
- * SMTP credentials. In production, swap this for a real provider.
+ * SMTP credentials. In production, swap this for a real provider (Resend).
  *
- * TODO: swap for Resend in production.
+ * NOTE: We provide a dummy `server` config so the NodemailerProvider's
+ * validation passes. Since `sendVerificationRequest` is overridden, the
+ * dummy server is NEVER actually used to send mail.
  */
-const consoleEmailProvider = {
+const consoleEmailProvider: EmailConfig = {
   id: "email",
   type: "email",
   name: "Email",
   from: "noreply@skdc.app",
   maxAge: 24 * 60 * 60,
-  async sendVerificationRequest({
-    identifier,
-    url,
-  }: {
-    identifier: string;
-    url: string;
-  }) {
+  server: {
+    host: "localhost",
+    port: 25,
+    auth: { user: "x", pass: "x" },
+  },
+  options: {},
+  async sendVerificationRequest({ identifier, url }) {
     /* eslint-disable no-console */
     console.log("\n\n========== SKDC MAGIC LINK ==========");
     console.log(`To:   ${identifier}`);
@@ -29,8 +31,6 @@ const consoleEmailProvider = {
     console.log("=====================================\n\n");
     /* eslint-enable no-console */
   },
-  options: {},
-  server: {},
-} satisfies EmailConfig;
+};
 
-export const providers = [consoleEmailProvider];
+export const providers: EmailConfig[] = [consoleEmailProvider];
