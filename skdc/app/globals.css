@@ -144,3 +144,44 @@
   0%, 100% { transform: translateY(0); opacity: 0.4; }
   50% { transform: translateY(10px); opacity: 1; }
 }
+
+/* Animated shimmering gradient for premium name */
+@keyframes name-shine {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* Slow pulse glow halo behind name */
+@keyframes name-halo {
+  0%, 100% {
+    opacity: 0.4;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  50% {
+    opacity: 0.7;
+    transform: translate(-50%, -50%) scale(1.15);
+  }
+}
+
+@layer utilities {
+  .text-shine-aurora {
+    background: linear-gradient(
+      90deg,
+      #c084fc 0%,
+      #f0abfc 20%,
+      #ffffff 35%,
+      #38bdf8 50%,
+      #ffffff 65%,
+      #f0abfc 80%,
+      #c084fc 100%
+    );
+    background-size: 200% 100%;
+    background-clip: text;
+    -webkit-background-clip: text;
+    color: transparent;
+    -webkit-text-fill-color: transparent;
+    animation: name-shine 6s ease-in-out infinite;
+    filter: drop-shadow(0 0 24px rgba(167, 139, 250, 0.4));
+  }
+}

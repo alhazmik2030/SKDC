@@ -364,10 +364,29 @@ export default function LandingPage() {
                   <div className="font-mono text-xs uppercase tracking-[0.3em] text-violet-300">
                     Founder · المؤسس
                   </div>
-                  <div className="mt-3 text-3xl font-bold tracking-tight text-gradient-aurora md:text-4xl">
-                    خالد الحازمي
+                  <div className="relative mt-3 inline-block">
+                    {/* Halo glow behind the name */}
+                    <div
+                      className="pointer-events-none absolute left-1/2 top-1/2 -z-10 h-32 w-64"
+                      style={{
+                        background:
+                          "radial-gradient(ellipse, rgba(167, 139, 250, 0.4) 0%, rgba(56, 189, 248, 0.2) 40%, transparent 70%)",
+                        filter: "blur(30px)",
+                        animation: "name-halo 4s ease-in-out infinite",
+                      }}
+                    />
+                    {/* The shining name */}
+                    <div className="text-shine-aurora text-4xl font-black tracking-tight md:text-5xl">
+                      خالد الحازمي
+                    </div>
+                    {/* Sparkle decorations */}
+                    <Sparkles className="absolute -right-6 -top-2 h-4 w-4 animate-pulse text-violet-300" />
+                    <Sparkles
+                      className="absolute -left-6 -bottom-1 h-3 w-3 animate-pulse text-sky-300"
+                      style={{ animationDelay: "1s" }}
+                    />
                   </div>
-                  <div className="mt-2 font-mono text-xs text-muted-foreground">
+                  <div className="mt-3 font-mono text-xs text-muted-foreground">
                     تأسيس · 15 مايو 2026 · الرياض، المملكة العربية السعودية
                   </div>
                   <div className="mx-auto mt-6 h-px w-24 bg-gradient-to-r from-transparent via-violet-400/50 to-transparent" />
