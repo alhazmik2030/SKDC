@@ -15,13 +15,14 @@ export default async function DashboardLayout({
 
   return (
     <div className="relative flex min-h-screen flex-row-reverse bg-background">
-      {/* Subtle aurora ambient */}
+      {/* Subtle ambient — follows the active theme. */}
       <div
         aria-hidden
         className="pointer-events-none fixed inset-0 -z-10"
         style={{
           background:
-            "radial-gradient(ellipse 60% 40% at 50% 0%, rgba(167, 139, 250, 0.10), transparent 70%)",
+            "radial-gradient(ellipse 60% 40% at 50% 0%, var(--theme-halo, rgba(167, 139, 250, 0.10)), transparent 70%)",
+          opacity: 0.4,
         }}
       />
 
