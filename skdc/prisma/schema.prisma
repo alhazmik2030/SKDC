@@ -1,0 +1,299 @@
+// =====================================================================
+// SKDC - Smart Kitchen Design Cloud
+// Prisma Schema
+// =====================================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// =====================================================================
+// AUTH (NextAuth.js compatible)
+// =====================================================================
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// =====================================================================
+// CORE
+// =====================================================================
+
+enum Plan {
+  FREE
+  PRO
+  ENTERPRISE
+}
+
+enum Locale {
+  AR
+  EN
+  ZH
+}
+
+enum Role {
+  OWNER
+  ADMIN
+  DESIGNER
+  VIEWER
+}
+
+model Workspace {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique
+  plan      Plan     @default(FREE)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  members   Membership[]
+  customers Customer[]
+  materials Material[]
+  templates Template[]
+  projects  Project[]
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  emailVerified DateTime?
+  image         String?
+  locale        Locale    @default(AR)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  accounts    Account[]
+  sessions    Session[]
+  memberships Membership[]
+}
+
+model Membership {
+  id          String    @id @default(cuid())
+  userId      String
+  workspaceId String
+  role        Role      @default(DESIGNER)
+  createdAt   DateTime  @default(now())
+
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, workspaceId])
+}
+
+// =====================================================================
+// DOMAIN: Customers, Materials, Templates, Projects
+// =====================================================================
+
+model Customer {
+  id          String   @id @default(cuid())
+  workspaceId String
+  name        String
+  phone       String?
+  email       String?
+  address     String?
+  notes       String?  @db.Text
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  projects  Project[]
+
+  @@index([workspaceId])
+}
+
+enum MaterialType {
+  HPL
+  POLYLACK
+  UVLACK
+  MELAMIN
+  MDF
+  PLYLACK
+  WOOD
+  OTHER
+}
+
+model Material {
+  id          String       @id @default(cuid())
+  workspaceId String
+  name        String
+  type        MaterialType
+  color       String?
+  thicknessMm Float        @default(18)
+  pricePerM2  Float        @default(0)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  units     Unit[]
+
+  @@index([workspaceId])
+}
+
+enum TemplateCategory {
+  LOWER_CABINET
+  UPPER_CABINET
+  CORNER
+  TALL_CABINET
+  DRAWER
+  APPLIANCE
+  ACCESSORY
+}
+
+// Templates are global by default (workspaceId = null) or workspace-specific
+model Template {
+  id          String           @id @default(cuid())
+  workspaceId String?
+  name        String
+  category    TemplateCategory
+  imageUrl    String?
+  // Default dimensions in millimeters
+  defaultWidth  Float
+  defaultHeight Float
+  defaultDepth  Float
+  // Configurable options schema (JSON)
+  options     Json             @default("{}")
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  workspace Workspace? @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  units     Unit[]
+
+  @@index([workspaceId])
+  @@index([category])
+}
+
+enum ProjectStatus {
+  DRAFT
+  IN_REVIEW
+  APPROVED
+  IN_PRODUCTION
+  COMPLETED
+  CANCELLED
+}
+
+model Project {
+  id          String        @id @default(cuid())
+  workspaceId String
+  customerId  String?
+  name        String
+  status      ProjectStatus @default(DRAFT)
+  // Room dimensions in millimeters
+  roomWidth   Float?
+  roomDepth   Float?
+  roomHeight  Float?
+  notes       String?       @db.Text
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  workspace Workspace  @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  customer  Customer?  @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  design    Design?
+  invoices  Invoice[]
+
+  @@index([workspaceId])
+  @@index([customerId])
+}
+
+// Design holds the actual layout of a project (one-to-one)
+model Design {
+  id        String   @id @default(cuid())
+  projectId String   @unique
+  data      Json     @default("{}") // serialized canvas/3D state
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  units   Unit[]
+}
+
+model Unit {
+  id         String   @id @default(cuid())
+  designId   String
+  templateId String?
+  materialId String?
+  // Position (mm) in room coordinates
+  x          Float    @default(0)
+  y          Float    @default(0)
+  z          Float    @default(0)
+  // Dimensions (mm) — may override template defaults
+  width      Float
+  height     Float
+  depth      Float
+  rotation   Float    @default(0) // degrees around vertical axis
+  // Override options (JSON)
+  options    Json     @default("{}")
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  design   Design    @relation(fields: [designId], references: [id], onDelete: Cascade)
+  template Template? @relation(fields: [templateId], references: [id], onDelete: SetNull)
+  material Material? @relation(fields: [materialId], references: [id], onDelete: SetNull)
+
+  @@index([designId])
+}
+
+enum InvoiceStatus {
+  DRAFT
+  SENT
+  PAID
+  CANCELLED
+}
+
+model Invoice {
+  id          String        @id @default(cuid())
+  projectId   String
+  number      String        // human-readable, e.g. INV-2026-0001
+  status      InvoiceStatus @default(DRAFT)
+  subtotal    Float         @default(0)
+  discount    Float         @default(0)
+  tax         Float         @default(0)
+  total       Float         @default(0)
+  currency    String        @default("SAR")
+  lineItems   Json          @default("[]")
+  notes       String?       @db.Text
+  issuedAt    DateTime?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, number])
+  @@index([projectId])
+}

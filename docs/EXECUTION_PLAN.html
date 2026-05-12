@@ -1,0 +1,946 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<title>المخطط التنفيذي — SKDC</title>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<style>
+  :root {
+    --bg: #0f172a;
+    --panel: #1e293b;
+    --border: #334155;
+    --text: #f1f5f9;
+    --muted: #94a3b8;
+    --accent: #38bdf8;
+    --success: #10b981;
+    --warning: #f59e0b;
+    --danger: #ef4444;
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: 'Segoe UI', Tahoma, 'Cairo', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    margin: 0;
+    padding: 24px;
+    line-height: 1.7;
+  }
+  .container { max-width: 1400px; margin: 0 auto; }
+  header {
+    background: linear-gradient(135deg, #1e3a8a 0%, #1e293b 100%);
+    padding: 32px;
+    border-radius: 16px;
+    margin-bottom: 32px;
+    border: 1px solid var(--border);
+  }
+  h1 { margin: 0 0 8px 0; font-size: 32px; }
+  .subtitle { color: var(--muted); font-size: 16px; }
+  .meta { margin-top: 16px; display: flex; gap: 24px; flex-wrap: wrap; font-size: 14px; }
+  .meta-item { color: var(--muted); }
+  .meta-item strong { color: var(--accent); }
+
+  .nav {
+    background: var(--panel);
+    padding: 16px;
+    border-radius: 12px;
+    margin-bottom: 24px;
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    border: 1px solid var(--border);
+    position: sticky;
+    top: 16px;
+    z-index: 100;
+  }
+  .nav a {
+    padding: 8px 16px;
+    background: var(--bg);
+    color: var(--text);
+    text-decoration: none;
+    border-radius: 8px;
+    font-size: 13px;
+    border: 1px solid var(--border);
+    transition: all 0.2s;
+  }
+  .nav a:hover { background: var(--accent); color: var(--bg); }
+
+  section {
+    background: var(--panel);
+    padding: 28px;
+    border-radius: 16px;
+    margin-bottom: 24px;
+    border: 1px solid var(--border);
+  }
+  h2 {
+    margin-top: 0;
+    color: var(--accent);
+    border-bottom: 2px solid var(--border);
+    padding-bottom: 12px;
+    font-size: 24px;
+  }
+  h3 { color: var(--text); margin-top: 24px; }
+
+  .diagram-wrap {
+    background: white;
+    border-radius: 12px;
+    padding: 24px;
+    margin: 16px 0;
+    overflow-x: auto;
+    direction: ltr;
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 16px;
+    margin: 16px 0;
+  }
+  .card {
+    background: var(--bg);
+    padding: 20px;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    border-right: 4px solid var(--accent);
+  }
+  .card h4 { margin: 0 0 8px 0; color: var(--accent); font-size: 16px; }
+  .card .num { font-size: 28px; font-weight: bold; color: var(--success); }
+  .card p { color: var(--muted); margin: 8px 0 0 0; font-size: 14px; }
+
+  .timeline {
+    position: relative;
+    padding-right: 32px;
+    margin: 24px 0;
+  }
+  .timeline::before {
+    content: '';
+    position: absolute;
+    right: 8px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: var(--border);
+  }
+  .phase {
+    position: relative;
+    padding: 16px 20px;
+    background: var(--bg);
+    border-radius: 12px;
+    margin-bottom: 16px;
+    border: 1px solid var(--border);
+  }
+  .phase::before {
+    content: '';
+    position: absolute;
+    right: -28px;
+    top: 24px;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: var(--accent);
+    border: 3px solid var(--bg);
+  }
+  .phase-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .phase-title { font-weight: bold; font-size: 18px; }
+  .phase-duration {
+    background: var(--accent);
+    color: var(--bg);
+    padding: 4px 12px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: bold;
+  }
+  .phase-tasks { color: var(--muted); font-size: 14px; margin-top: 8px; }
+  .phase-tasks li { margin: 4px 0; }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+    font-size: 14px;
+  }
+  th, td {
+    text-align: right;
+    padding: 12px;
+    border-bottom: 1px solid var(--border);
+  }
+  th { background: var(--bg); color: var(--accent); }
+  tr:hover { background: rgba(56, 189, 248, 0.05); }
+
+  .badge {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: bold;
+  }
+  .badge-success { background: var(--success); color: white; }
+  .badge-warning { background: var(--warning); color: var(--bg); }
+  .badge-danger { background: var(--danger); color: white; }
+  .badge-info { background: var(--accent); color: var(--bg); }
+
+  .legend {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin: 12px 0;
+    font-size: 13px;
+    color: var(--muted);
+  }
+  .legend-item { display: flex; align-items: center; gap: 6px; }
+  .legend-box { width: 14px; height: 14px; border-radius: 3px; }
+
+  footer {
+    text-align: center;
+    color: var(--muted);
+    padding: 24px;
+    font-size: 13px;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+<header>
+  <h1>المخطط التنفيذي — SKDC</h1>
+  <div class="subtitle">Smart Kitchen Design Cloud — برنامج تصميم المطابخ السحابي</div>
+  <div class="meta">
+    <span class="meta-item">المرجع: <strong>PLAN.md</strong></span>
+    <span class="meta-item">الإصدار: <strong>0.1</strong></span>
+    <span class="meta-item">التاريخ: <strong>2026-05-12</strong></span>
+    <span class="meta-item">المستوى: <strong>مبتدئ</strong></span>
+  </div>
+</header>
+
+<nav class="nav">
+  <a href="#summary">الملخص</a>
+  <a href="#timeline">الجدول الزمني</a>
+  <a href="#phases">المراحل التفصيلية</a>
+  <a href="#architecture">المعمارية التقنية</a>
+  <a href="#userflow">رحلة المستخدم</a>
+  <a href="#database">قاعدة البيانات</a>
+  <a href="#mvp">تفصيل MVP</a>
+  <a href="#mcp">نظام MCP</a>
+  <a href="#image-ai">صورة → تصميم</a>
+  <a href="#risks">المخاطر</a>
+  <a href="#next">الخطوات الفورية</a>
+</nav>
+
+<!-- ========== الملخص ========== -->
+<section id="summary">
+  <h2>1. الملخص التنفيذي</h2>
+  <div class="grid">
+    <div class="card">
+      <h4>المدة الكاملة</h4>
+      <div class="num">12-18</div>
+      <p>شهراً بدوام كامل للنسخة النهائية</p>
+    </div>
+    <div class="card">
+      <h4>وقت MVP</h4>
+      <div class="num">3-4</div>
+      <p>أشهر للإصدار الأول التجريبي</p>
+    </div>
+    <div class="card">
+      <h4>عدد المراحل</h4>
+      <div class="num">6</div>
+      <p>مراحل متتالية من التعلم للإطلاق</p>
+    </div>
+    <div class="card">
+      <h4>التكلفة السنوية</h4>
+      <div class="num">~$2K</div>
+      <p>البنية التحتية للسنة الأولى</p>
+    </div>
+    <div class="card">
+      <h4>اللغات المدعومة</h4>
+      <div class="num">3</div>
+      <p>عربي، إنجليزي، صيني</p>
+    </div>
+    <div class="card">
+      <h4>المميزات الأساسية</h4>
+      <div class="num">18</div>
+      <p>10 أساسية + 8 تنافسية</p>
+    </div>
+  </div>
+</section>
+
+<!-- ========== الجدول الزمني ========== -->
+<section id="timeline">
+  <h2>2. الجدول الزمني الإجمالي (Gantt)</h2>
+  <p>هذا المخطط يوضح المراحل الست متتالية مع توقيتها التقريبي بالأسابيع.</p>
+  <div class="diagram-wrap">
+    <pre class="mermaid">
+gantt
+  title  المخطط الزمني الإجمالي (بالأسابيع)
+  dateFormat  X
+  axisFormat  W%V
+
+  section المرحلة 0
+  التعلم والتأسيس        :a0, 0, 8w
+
+  section المرحلة 1 (MVP)
+  البنية الأساسية         :a1a, after a0, 2w
+  إدارة المستخدمين        :a1b, after a1a, 2w
+  مكتبة القوالب 2D        :a1c, after a1b, 4w
+  محرر 2D + فاتورة        :a1d, after a1c, 4w
+
+  section المرحلة 2
+  ترقية لـ 3D            :a2, after a1d, 12w
+
+  section المرحلة 3
+  مخطط القص والتقارير    :a3, after a2, 8w
+
+  section المرحلة 4
+  التدويل (3 لغات)        :a4, after a3, 4w
+
+  section المرحلة 5
+  الاشتراكات والتسويق    :a5, after a4, 12w
+
+  section المرحلة 6 (AI)
+  نظام MCP               :a6, after a5, 6w
+  Image-to-Design        :a7, after a6, 8w
+    </pre>
+  </div>
+  <div class="legend">
+    <div class="legend-item"><span class="badge badge-info">MVP</span> أسبوع 0-20</div>
+    <div class="legend-item"><span class="badge badge-success">3D + قص</span> أسبوع 20-40</div>
+    <div class="legend-item"><span class="badge badge-warning">إطلاق</span> أسبوع 44-56</div>
+    <div class="legend-item"><span class="badge badge-danger">AI متقدم</span> أسبوع 56-70</div>
+  </div>
+</section>
+
+<!-- ========== المراحل ========== -->
+<section id="phases">
+  <h2>3. المراحل التفصيلية</h2>
+
+  <div class="timeline">
+
+    <div class="phase">
+      <div class="phase-header">
+        <div class="phase-title">المرحلة 0 — التعلم والتأسيس</div>
+        <span class="phase-duration">4-8 أسابيع</span>
+      </div>
+      <p>اكتساب المهارات الأساسية قبل البناء الفعلي.</p>
+      <ul class="phase-tasks">
+        <li>HTML/CSS/JavaScript الأساسي</li>
+        <li>دورة React رسمية من react.dev</li>
+        <li>مشروع Next.js تجريبي صغير</li>
+        <li>أساسيات SQL + Prisma</li>
+        <li>تجربة Three.js: عرض مكعب 3D</li>
+        <li>إعداد بيئة العمل: VS Code, Node.js, Git, GitHub</li>
+      </ul>
+    </div>
+
+    <div class="phase">
+      <div class="phase-header">
+        <div class="phase-title">المرحلة 1 — MVP (الإصدار التجريبي)</div>
+        <span class="phase-duration">8-12 أسبوع</span>
+      </div>
+      <p>إصدار قابل للعرض على مستخدم تجريبي واحد.</p>
+      <ul class="phase-tasks">
+        <li>إنشاء مشروع Next.js + النشر على Vercel</li>
+        <li>قاعدة بيانات + Prisma + NextAuth</li>
+        <li>إدارة Workspaces والمستخدمين</li>
+        <li>مكتبة قوالب (جداول + صور بدون 3D)</li>
+        <li>محرر 2D مبسط بالسحب والإفلات</li>
+        <li>محرر خصائص الوحدة (Component Options)</li>
+        <li>إدارة العملاء + فاتورة طباعة بسيطة</li>
+      </ul>
+    </div>
+
+    <div class="phase">
+      <div class="phase-header">
+        <div class="phase-title">المرحلة 2 — العرض ثلاثي الأبعاد</div>
+        <span class="phase-duration">8-12 أسبوع</span>
+      </div>
+      <p>الترقية من 2D إلى محرر 3D كامل.</p>
+      <ul class="phase-tasks">
+        <li>دمج Three.js + React Three Fiber</li>
+        <li>تحويل القوالب لنماذج 3D برمجية (procedural)</li>
+        <li>السحب والإفلات + الدوران 45° + قلب الاتجاه</li>
+        <li>اللصق الذكي بين الوحدات (Snap)</li>
+        <li>كاميرا حرة + إضاءة وظلال</li>
+        <li>إضافة الجدران والأرضية</li>
+      </ul>
+    </div>
+
+    <div class="phase">
+      <div class="phase-header">
+        <div class="phase-title">المرحلة 3 — مخطط القص والتقارير</div>
+        <span class="phase-duration">6-8 أسابيع</span>
+      </div>
+      <p>تحويل التصميم لإنتاج فعلي في الورشة.</p>
+      <ul class="phase-tasks">
+        <li>توليد قائمة قطع (Parts) لكل وحدة 3D</li>
+        <li>دمج خوارزمية Bin Packing</li>
+        <li>رسم مخطط القص بصرياً (SVG)</li>
+        <li>تقرير ورشة بصيغة PDF</li>
+        <li>قائمة المشتريات والإكسسوارات تلقائياً</li>
+      </ul>
+    </div>
+
+    <div class="phase">
+      <div class="phase-header">
+        <div class="phase-title">المرحلة 4 — التدويل (3 لغات)</div>
+        <span class="phase-duration">3-4 أسابيع</span>
+      </div>
+      <p>دعم العربي + الإنجليزي + الصيني بشكل احترافي.</p>
+      <ul class="phase-tasks">
+        <li>إعداد next-intl</li>
+        <li>ترجمة كامل الواجهة</li>
+        <li>التعامل مع RTL/LTR</li>
+        <li>تنسيق الأرقام والعملات حسب اللغة</li>
+        <li><strong>تنبيه:</strong> الصينية تحتاج مترجم محترف</li>
+      </ul>
+    </div>
+
+    <div class="phase">
+      <div class="phase-header">
+        <div class="phase-title">المرحلة 5 — الإطلاق والتسويق</div>
+        <span class="phase-duration">مستمر</span>
+      </div>
+      <p>الميزات المتقدمة، الاشتراكات، التسويق.</p>
+      <ul class="phase-tasks">
+        <li>الاشتراكات والدفع (Stripe)</li>
+        <li>الخطط: مجاني، احترافي، مؤسسات</li>
+        <li>لوحة تحكم إدارية</li>
+        <li>دعوة أعضاء فريق للـ Workspace</li>
+        <li>رابط معاينة عام للعميل</li>
+        <li>موقع تعريفي + توثيق + تسويق</li>
+      </ul>
+    </div>
+
+    <div class="phase" style="border-right: 4px solid #ec4899;">
+      <div class="phase-header">
+        <div class="phase-title">المرحلة 6 — ميزات AI المتقدمة</div>
+        <span class="phase-duration">14 أسبوع</span>
+      </div>
+      <p>الميزات الذكية اللي تميّزنا عن كل المنافسين.</p>
+      <ul class="phase-tasks">
+        <li><strong>MCP Server داخلي:</strong> AI داخل المحرر يفهم الأوامر النصية</li>
+        <li><strong>MCP Server عام:</strong> تكامل مع Claude/ChatGPT/Cursor</li>
+        <li>OAuth 2.1 + Streamable HTTP transport</li>
+        <li><strong>Image-to-Design:</strong> رفع صورة → تصميم 3D قابل للتعديل</li>
+        <li>Vision AI (Claude Opus / GPT-4o) + Embeddings للقوالب</li>
+        <li>Beta مغلقة → إطلاق محدود → إطلاق عام</li>
+      </ul>
+    </div>
+
+  </div>
+</section>
+
+<!-- ========== المعمارية ========== -->
+<section id="architecture">
+  <h2>4. المعمارية التقنية</h2>
+  <p>الصورة الكاملة لكيف يتواصل كل جزء من النظام مع الآخر.</p>
+  <div class="diagram-wrap">
+    <pre class="mermaid">
+flowchart TB
+  subgraph CLIENT["العميل (المتصفح)"]
+    UI["Next.js + React<br/>Tailwind + shadcn/ui"]
+    R3F["React Three Fiber<br/>(محرر 3D)"]
+    I18N["next-intl<br/>(عربي/إنجليزي/صيني)"]
+  end
+
+  subgraph VERCEL["Vercel (الاستضافة)"]
+    API["Next.js API Routes<br/>(Backend)"]
+    AUTH["NextAuth.js<br/>(تسجيل الدخول)"]
+  end
+
+  subgraph DATA["البيانات"]
+    DB[("PostgreSQL<br/>Supabase")]
+    PRISMA["Prisma ORM"]
+    STORAGE["Cloudflare R2<br/>(صور + 3D models)"]
+  end
+
+  subgraph EXTERNAL["خدمات خارجية"]
+    STRIPE["Stripe<br/>(الدفع)"]
+    EMAIL["Resend<br/>(الإيميلات)"]
+  end
+
+  UI --> API
+  R3F --> API
+  I18N --> UI
+  API --> AUTH
+  API --> PRISMA
+  PRISMA --> DB
+  API --> STORAGE
+  API --> STRIPE
+  API --> EMAIL
+
+  style UI fill:#3b82f6,color:#fff
+  style R3F fill:#8b5cf6,color:#fff
+  style I18N fill:#06b6d4,color:#fff
+  style API fill:#10b981,color:#fff
+  style DB fill:#f59e0b,color:#000
+  style STRIPE fill:#635bff,color:#fff
+    </pre>
+  </div>
+
+  <h3>توزيع الطبقات</h3>
+  <div class="grid">
+    <div class="card">
+      <h4>طبقة العميل (Frontend)</h4>
+      <p>Next.js + React + Tailwind + shadcn/ui + Three.js — كل شيء يعمل في المتصفح.</p>
+    </div>
+    <div class="card">
+      <h4>طبقة الـ API (Backend)</h4>
+      <p>Next.js API Routes في نفس المشروع — لا حاجة لخادم منفصل.</p>
+    </div>
+    <div class="card">
+      <h4>طبقة البيانات</h4>
+      <p>PostgreSQL على Supabase + Prisma ORM للوصول الآمن.</p>
+    </div>
+    <div class="card">
+      <h4>طبقة التخزين</h4>
+      <p>Cloudflare R2 للملفات الكبيرة (صور القوالب، نماذج 3D، PDFs).</p>
+    </div>
+  </div>
+</section>
+
+<!-- ========== رحلة المستخدم ========== -->
+<section id="userflow">
+  <h2>5. رحلة المستخدم</h2>
+  <p>المسار الكامل من تسجيل المستخدم حتى توليد مخطط القص.</p>
+  <div class="diagram-wrap">
+    <pre class="mermaid">
+flowchart LR
+  START([المستخدم]) --> SIGNUP[تسجيل حساب]
+  SIGNUP --> WORKSPACE[إنشاء Workspace<br/>للشركة]
+  WORKSPACE --> DASH[لوحة التحكم]
+
+  DASH --> CUSTOMER[إضافة عميل]
+  DASH --> MATERIAL[إعداد الخامات<br/>HPL, MDF, ...]
+
+  CUSTOMER --> PROJECT[مشروع جديد]
+  PROJECT --> EDITOR[محرر 3D]
+
+  EDITOR --> LIBRARY[سحب وحدات<br/>من المكتبة]
+  LIBRARY --> CUSTOMIZE[تعديل الخصائص<br/>أبعاد + خامات]
+  CUSTOMIZE --> ARRANGE[ترتيب على<br/>الأرضية]
+  ARRANGE --> EDITOR
+
+  EDITOR --> SAVE[حفظ التصميم]
+  SAVE --> INVOICE[توليد فاتورة]
+  SAVE --> CUTLIST[توليد مخطط قص]
+  SAVE --> REPORT[تقرير الورشة]
+
+  INVOICE --> CLIENT([إرسال للعميل])
+  CUTLIST --> WORKSHOP([إرسال للورشة])
+  REPORT --> WORKSHOP
+
+  style START fill:#10b981,color:#fff
+  style EDITOR fill:#8b5cf6,color:#fff
+  style CLIENT fill:#f59e0b,color:#000
+  style WORKSHOP fill:#f59e0b,color:#000
+    </pre>
+  </div>
+</section>
+
+<!-- ========== قاعدة البيانات ========== -->
+<section id="database">
+  <h2>6. مخطط قاعدة البيانات (ERD)</h2>
+  <p>الجداول الرئيسية والعلاقات بينها.</p>
+  <div class="diagram-wrap">
+    <pre class="mermaid">
+erDiagram
+  WORKSPACE ||--o{ USER : "يحتوي"
+  WORKSPACE ||--o{ CUSTOMER : "يملك"
+  WORKSPACE ||--o{ PROJECT : "يملك"
+  WORKSPACE ||--o{ MATERIAL : "يملك"
+  WORKSPACE ||--o{ TEMPLATE : "يخصص"
+  CUSTOMER ||--o{ PROJECT : "صاحب"
+  PROJECT ||--o{ INVOICE : "ينتج"
+  PROJECT ||--|| DESIGN : "يحتوي"
+  DESIGN ||--o{ UNIT : "يحتوي"
+  UNIT }o--|| TEMPLATE : "مشتق من"
+  UNIT }o--|| MATERIAL : "مصنوع من"
+  PROJECT ||--o{ CUT_DIAGRAM : "ينتج"
+
+  WORKSPACE {
+    string id PK
+    string name
+    string plan
+    datetime createdAt
+  }
+  USER {
+    string id PK
+    string email
+    string name
+    string locale
+    string workspaceId FK
+  }
+  CUSTOMER {
+    string id PK
+    string name
+    string phone
+    string address
+    string workspaceId FK
+  }
+  PROJECT {
+    string id PK
+    string name
+    string status
+    string customerId FK
+    string workspaceId FK
+  }
+  DESIGN {
+    string id PK
+    json data
+    string projectId FK
+  }
+  UNIT {
+    string id PK
+    string type
+    json position
+    json dimensions
+    json options
+    string templateId FK
+    string materialId FK
+  }
+  TEMPLATE {
+    string id PK
+    string name
+    string category
+    json defaultOptions
+  }
+  MATERIAL {
+    string id PK
+    string name
+    string type
+    float pricePerM2
+    float thickness
+  }
+  INVOICE {
+    string id PK
+    float total
+    string status
+    json lineItems
+    string projectId FK
+  }
+  CUT_DIAGRAM {
+    string id PK
+    json layout
+    string projectId FK
+  }
+    </pre>
+  </div>
+</section>
+
+<!-- ========== تفصيل MVP ========== -->
+<section id="mvp">
+  <h2>7. تفصيل MVP — الأسابيع الأولى</h2>
+  <p>تقسيم المرحلة الأولى إلى Sprints أسبوعية يمكن تنفيذها بترتيب.</p>
+
+  <table>
+    <thead>
+      <tr>
+        <th>الأسبوع</th>
+        <th>المهمة</th>
+        <th>الناتج</th>
+        <th>الحالة</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td>1</td><td>تثبيت الأدوات + إنشاء أول مشروع Next.js</td><td>"Hello World" منشور على Vercel</td><td><span class="badge badge-info">جاهز للبدء</span></td></tr>
+      <tr><td>2</td><td>تعلم Prisma + إنشاء جدول Customer</td><td>صفحة قائمة عملاء</td><td><span class="badge badge-warning">معلق</span></td></tr>
+      <tr><td>3-4</td><td>تسجيل الدخول NextAuth + Workspaces</td><td>دخول + لوحة تحكم بسيطة</td><td><span class="badge badge-warning">معلق</span></td></tr>
+      <tr><td>5-6</td><td>إدارة العملاء كاملة + الخامات</td><td>CRUD لعميل وخامة</td><td><span class="badge badge-warning">معلق</span></td></tr>
+      <tr><td>7-8</td><td>مكتبة القوالب (بدون 3D)</td><td>قائمة قوالب مع صور</td><td><span class="badge badge-warning">معلق</span></td></tr>
+      <tr><td>9-10</td><td>محرر 2D بسيط بـ Canvas</td><td>سحب وإفلات وحدات</td><td><span class="badge badge-warning">معلق</span></td></tr>
+      <tr><td>11-12</td><td>محرر خصائص الوحدة</td><td>تعديل أبعاد كل وحدة</td><td><span class="badge badge-warning">معلق</span></td></tr>
+      <tr><td>13-14</td><td>حفظ المشروع + فاتورة HTML</td><td>طباعة فاتورة من المتصفح</td><td><span class="badge badge-warning">معلق</span></td></tr>
+      <tr><td>15-16</td><td>اختبار MVP مع مستخدم تجريبي</td><td>قائمة تحسينات + إصلاحات</td><td><span class="badge badge-warning">معلق</span></td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ========== نظام MCP ========== -->
+<section id="mcp">
+  <h2>8. نظام MCP — التحكم بالبرنامج عبر AI</h2>
+  <p><strong>MCP (Model Context Protocol)</strong> بروتوكول Anthropic المفتوح يخلي الـ AI (Claude/ChatGPT/Cursor) يتفاعل مع برنامجنا. تخيل المصمم يقول: "صمم مطبخ ركن 4×3 مودرن أبيض" والـ AI ينفذها في ثوان.</p>
+
+  <h3>المعمارية: نوعان من التكامل</h3>
+  <div class="diagram-wrap">
+    <pre class="mermaid">
+flowchart TB
+  subgraph IN["1- مساعد AI داخلي"]
+    USER1[المصمم في المحرر] --> CHAT[شريط المساعد]
+    CHAT --> AI1[Claude API]
+    AI1 --> MCPI[MCP Tools داخلياً]
+    MCPI --> EDITOR[محرر 3D]
+  end
+
+  subgraph OUT["2- MCP Server عام (Remote)"]
+    USER2[مستخدم Claude Desktop] --> CLAUDE[Claude]
+    CLAUDE --> OAUTH[OAuth 2.1]
+    OAUTH --> SERVER[MCP Server<br/>api/mcp]
+    SERVER --> DB[(قاعدة البيانات)]
+  end
+
+  style USER1 fill:#10b981,color:#fff
+  style USER2 fill:#10b981,color:#fff
+  style AI1 fill:#8b5cf6,color:#fff
+  style CLAUDE fill:#8b5cf6,color:#fff
+  style SERVER fill:#ef4444,color:#fff
+    </pre>
+  </div>
+
+  <h3>المكونات: Tools / Resources / Prompts</h3>
+  <div class="grid">
+    <div class="card" style="border-right-color: #ef4444;">
+      <h4>Tools (الأفعال)</h4>
+      <p style="color: var(--text);">
+        • create_project<br>
+        • add_unit<br>
+        • update_unit<br>
+        • move_unit / remove_unit<br>
+        • set_material<br>
+        • generate_invoice<br>
+        • generate_cut_list<br>
+        • apply_template<br>
+        • calculate_quote
+      </p>
+    </div>
+    <div class="card" style="border-right-color: #06b6d4;">
+      <h4>Resources (البيانات)</h4>
+      <p style="color: var(--text);">
+        • templates://list<br>
+        • materials://list<br>
+        • customers://list<br>
+        • projects://{id}<br>
+        • projects://{id}/design
+      </p>
+    </div>
+    <div class="card" style="border-right-color: #f59e0b;">
+      <h4>Prompts (قوالب)</h4>
+      <p style="color: var(--text);">
+        • design_kitchen_from_description<br>
+        • optimize_layout<br>
+        • suggest_materials
+      </p>
+    </div>
+  </div>
+
+  <h3>التقنيات (وفق MCP Spec 2026)</h3>
+  <table>
+    <thead><tr><th>البند</th><th>الاختيار</th><th>السبب</th></tr></thead>
+    <tbody>
+      <tr><td>SDK</td><td>@modelcontextprotocol/sdk (TypeScript)</td><td>Tier 1 رسمي + Zod validation</td></tr>
+      <tr><td>Transport</td><td>Streamable HTTP</td><td>المعيار الحالي + قابل للتوسع</td></tr>
+      <tr><td>Authentication</td><td>OAuth 2.1 + RFC 8707</td><td>عزل آمن بين الـ Workspaces</td></tr>
+      <tr><td>Audience binding</td><td>resource parameter</td><td>يمنع سرقة Tokens cross-tenant</td></tr>
+      <tr><td>الموقع</td><td>Next.js API Route: /api/mcp</td><td>لا حاجة لخادم منفصل</td></tr>
+      <tr><td>Scopes</td><td>designs:read, designs:write, invoices:create</td><td>تحكم دقيق بالصلاحيات</td></tr>
+    </tbody>
+  </table>
+
+  <h3>سيناريوهات استخدام</h3>
+  <div class="grid">
+    <div class="card">
+      <h4>المصمم المحترف</h4>
+      <p>"اقلب التصميم وبدل وحدة الفرن مكان الثلاجة، وغيّر الخامة لـ UVLACK أبيض" — ينفذ في 3 ثوان.</p>
+    </div>
+    <div class="card">
+      <h4>المالك من جواله</h4>
+      <p>"ارفع التصميم 423 وغيّر القياسات لـ 380×260 وأرسل لي PDF" — عبر Claude في الجوال.</p>
+    </div>
+    <div class="card">
+      <h4>التكامل مع ERP</h4>
+      <p>ورشة كبيرة تربط نظامها بـ MCP — أي طلب جديد في ERP يبدأ مشروع تلقائي عندنا.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ========== صورة → تصميم ========== -->
+<section id="image-ai">
+  <h2>9. Image-to-Design — تحويل الصورة إلى تصميم</h2>
+  <p>المستخدم يرفع صورة (مطبخ موجود، رسم يدوي، صورة Pinterest)، الذكاء الاصطناعي يحوّلها لتصميم 3D قابل للتعديل بدقة <strong>95%</strong> (واقعياً نبدأ بـ 70-80% ونتحسن).</p>
+
+  <h3>Pipeline التحويل</h3>
+  <div class="diagram-wrap">
+    <pre class="mermaid">
+flowchart TB
+  IMG[صورة المستخدم] --> META[إدخال أبعاد الغرفة<br/>طول × عرض × ارتفاع]
+  META --> VISION[Vision AI<br/>Claude Opus 4.7 / GPT-4o]
+  VISION --> JSON[JSON منظم<br/>وحدات + مواقع + أبعاد + خامات]
+  JSON --> EMBED[Embeddings<br/>مطابقة مع القوالب]
+  EMBED --> LIB[(مكتبة القوالب)]
+  EMBED --> BUILD[توليد تصميم 3D]
+  BUILD --> EDITOR[المحرر للتعديل]
+  EDITOR --> SAVE[حفظ كمشروع]
+
+  style IMG fill:#10b981,color:#fff
+  style VISION fill:#8b5cf6,color:#fff
+  style EDITOR fill:#3b82f6,color:#fff
+  style SAVE fill:#f59e0b,color:#000
+    </pre>
+  </div>
+
+  <h3>أنواع الصور المدعومة</h3>
+  <table>
+    <thead><tr><th>النوع</th><th>المثال</th><th>الصعوبة</th></tr></thead>
+    <tbody>
+      <tr><td>صورة مطبخ موجود</td><td>المالك يصور مطبخه</td><td><span class="badge badge-warning">متوسطة</span></td></tr>
+      <tr><td>صورة مرجعية</td><td>Pinterest / كتالوج</td><td><span class="badge badge-danger">عالية</span></td></tr>
+      <tr><td>رسم يدوي</td><td>Sketch بالقلم على ورقة</td><td><span class="badge badge-danger">عالية جداً</span></td></tr>
+      <tr><td>مخطط 2D</td><td>Floor plan معماري</td><td><span class="badge badge-success">منخفضة</span></td></tr>
+      <tr><td>مخطط + صور جدران</td><td>الأمثل: 2D + 3-4 صور</td><td><span class="badge badge-success">منخفضة جداً</span></td></tr>
+    </tbody>
+  </table>
+
+  <h3>التحديات والحلول</h3>
+  <table>
+    <thead><tr><th>التحدي</th><th>الحل</th></tr></thead>
+    <tbody>
+      <tr><td>الأبعاد غير دقيقة من الصورة</td><td>إلزام المستخدم بإدخال أبعاد الغرفة</td></tr>
+      <tr><td>العمق صعب من 2D</td><td>طلب 2-3 زوايا + Depth Anything v2</td></tr>
+      <tr><td>زاوية التصوير تشوّه النسب</td><td>Perspective correction قبل التحليل</td></tr>
+      <tr><td>خامات غير مطابقة</td><td>عرض أقرب 3 بدائل للاختيار</td></tr>
+      <tr><td>التكلفة ($0.05-0.20/تحليل)</td><td>محدودة بـ credits أو الخطة</td></tr>
+      <tr><td>الدقة الواقعية < 95%</td><td>تسويق "تصميم مبدئي" بدل "نسخة طبق الأصل"</td></tr>
+    </tbody>
+  </table>
+
+  <h3>إستراتيجية الإطلاق</h3>
+  <div class="grid">
+    <div class="card" style="border-right-color: #ec4899;">
+      <h4>1. Beta مغلقة</h4>
+      <p>10-20 ورشة مختارة، مجاناً مقابل feedback، مدتها 3 أشهر.</p>
+    </div>
+    <div class="card" style="border-right-color: #8b5cf6;">
+      <h4>2. جمع بيانات</h4>
+      <p>كل تصميم متولد + التعديلات اليدوية = بيانات تدريب.</p>
+    </div>
+    <div class="card" style="border-right-color: #3b82f6;">
+      <h4>3. إطلاق محدود</h4>
+      <p>الخطة Pro فقط، 50 تحويل/شهر، 3 أشهر.</p>
+    </div>
+    <div class="card" style="border-right-color: #10b981;">
+      <h4>4. إطلاق عام</h4>
+      <p>بعد 6 أشهر بيتا، بدقة موثقة 85%+.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ========== المخاطر ========== -->
+<section id="risks">
+  <h2>10. المخاطر والتحديات</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>الخطر</th>
+        <th>الاحتمال</th>
+        <th>الأثر</th>
+        <th>كيف نتعامل معه</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>صعوبة محرر 3D</td>
+        <td><span class="badge badge-danger">عالي</span></td>
+        <td><span class="badge badge-danger">عالي</span></td>
+        <td>استخدام React Three Fiber + قوالب procedural بسيطة</td>
+      </tr>
+      <tr>
+        <td>المشروع كبير لشخص واحد مبتدئ</td>
+        <td><span class="badge badge-danger">عالي</span></td>
+        <td><span class="badge badge-danger">عالي</span></td>
+        <td>الالتزام بـ MVP أولاً + إيجاد شريك بعد المرحلة 2</td>
+      </tr>
+      <tr>
+        <td>خوارزمية القص معقدة</td>
+        <td><span class="badge badge-warning">متوسط</span></td>
+        <td><span class="badge badge-warning">متوسط</span></td>
+        <td>مكتبة جاهزة (guillotine-packer)</td>
+      </tr>
+      <tr>
+        <td>الترجمة الصينية</td>
+        <td><span class="badge badge-warning">متوسط</span></td>
+        <td><span class="badge badge-warning">متوسط</span></td>
+        <td>توظيف مترجم محترف لاحقاً</td>
+      </tr>
+      <tr>
+        <td>الأداء مع تصاميم كبيرة</td>
+        <td><span class="badge badge-success">منخفض</span></td>
+        <td><span class="badge badge-warning">متوسط</span></td>
+        <td>تحسينات لاحقة (Instancing, LOD)</td>
+      </tr>
+      <tr>
+        <td>منافسة من شركات كبيرة</td>
+        <td><span class="badge badge-warning">متوسط</span></td>
+        <td><span class="badge badge-warning">متوسط</span></td>
+        <td>التركيز على السوق العربي + الصيني أولاً</td>
+      </tr>
+      <tr>
+        <td>تكلفة AI API (Vision + Claude)</td>
+        <td><span class="badge badge-danger">عالي</span></td>
+        <td><span class="badge badge-warning">متوسط</span></td>
+        <td>نظام Credits + حد أقصى للخطة المجانية + Caching</td>
+      </tr>
+      <tr>
+        <td>دقة Image-to-Design أقل من المتوقع</td>
+        <td><span class="badge badge-danger">عالي</span></td>
+        <td><span class="badge badge-warning">متوسط</span></td>
+        <td>تسويق "تصميم مبدئي" + Beta طويلة + جمع بيانات تدريب</td>
+      </tr>
+      <tr>
+        <td>أمان MCP (cross-tenant attacks)</td>
+        <td><span class="badge badge-warning">متوسط</span></td>
+        <td><span class="badge badge-danger">عالي</span></td>
+        <td>OAuth 2.1 + RFC 8707 audience binding + Audit log</td>
+      </tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ========== الخطوات الفورية ========== -->
+<section id="next">
+  <h2>11. الخطوات الفورية — ابدأ هنا</h2>
+  <p>هذي أول 4 خطوات تنفذها الأسبوع القادم:</p>
+  <div class="diagram-wrap">
+    <pre class="mermaid">
+flowchart TB
+  S1[1- تثبيت Node.js و VS Code و Git] --> S2[2- إنشاء حساب على GitHub و Vercel و Supabase]
+  S2 --> S3[3- إنشاء مشروع Next.js التجريبي]
+  S3 --> S4[4- نشر Hello World على Vercel]
+  S4 --> S5[5- البدء بدورة React من react.dev]
+  S5 --> DONE([جاهز للمرحلة 1])
+
+  style S1 fill:#10b981,color:#fff
+  style S2 fill:#10b981,color:#fff
+  style S3 fill:#3b82f6,color:#fff
+  style S4 fill:#3b82f6,color:#fff
+  style S5 fill:#8b5cf6,color:#fff
+  style DONE fill:#f59e0b,color:#000
+    </pre>
+  </div>
+
+  <h3>الأمر للأمر الأول</h3>
+  <pre style="background: var(--bg); padding: 16px; border-radius: 8px; overflow-x: auto; direction: ltr; text-align: left;"><code>npx create-next-app@latest skdc-prototype --typescript --tailwind --app
+cd skdc-prototype
+npm run dev</code></pre>
+</section>
+
+<footer>
+  المخطط التنفيذي — SKDC v0.1 — تم إنشاؤه بواسطة Claude Code
+</footer>
+
+</div>
+
+<script>
+  mermaid.initialize({
+    startOnLoad: true,
+    theme: 'default',
+    flowchart: { curve: 'basis', htmlLabels: true },
+    gantt: { fontSize: 12 },
+    er: { fontSize: 14 }
+  });
+</script>
+</body>
+</html>
