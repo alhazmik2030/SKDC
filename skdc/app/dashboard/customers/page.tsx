@@ -1,3 +1,5 @@
+"use client";
+
 import Link from "next/link";
 import { Users, Plus } from "lucide-react";
 import { PageHeader } from "@/components/dashboard/page-header";

@@ -2,6 +2,9 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono, Cairo } from "next/font/google";
 import { Toaster } from "sonner";
 import { SmoothScroll } from "@/components/effects/smooth-scroll";
+import { ThemeProvider } from "@/components/theme-provider";
+import { ThemeSwitcherProvider } from "@/components/theme-switcher";
+import { SessionProvider } from "@/components/session-provider";
 import "./globals.css";
 
 const geist = Geist({
@@ -38,7 +41,13 @@ export default function RootLayout({
       <body
         className={`${cairo.variable} ${geist.variable} ${geistMono.variable} font-arabic antialiased min-h-full`}
       >
-        <SmoothScroll>{children}</SmoothScroll>
+        <SessionProvider>
+          <ThemeProvider>
+            <ThemeSwitcherProvider>
+              <SmoothScroll>{children}</SmoothScroll>
+            </ThemeSwitcherProvider>
+          </ThemeProvider>
+        </SessionProvider>
         <Toaster
           position="top-center"
           theme="dark"

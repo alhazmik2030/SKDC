@@ -1,6 +1,8 @@
 "use client";
 
 import * as React from "react";
+import Link from "next/link";
+import { signOut, useSession } from "next-auth/react";
 import { ChevronDown, LogOut, Settings as SettingsIcon, SunMoon } from "lucide-react";
 import {
   DropdownMenu,
@@ -11,22 +13,28 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { useThemeSwitcher } from "@/components/theme-switcher";
 
-// NOTE: next-auth wiring is owned by Agent A. We don't import from "@/lib/auth"
-// yet to avoid a hard build break. The signOut click is a placeholder.
 function handleSignOut() {
-  // TODO: Replace with `signOut()` from "next-auth/react" once Agent A
-  // finishes wiring `lib/auth.ts` and the auth route handlers.
-  if (typeof window !== "undefined") {
-    console.warn("[user-menu] signOut not wired yet — Agent A");
-  }
+  void signOut({ callbackUrl: "/sign-in" });
+}
+
+function initialsFromName(name: string | null | undefined, email: string | null | undefined): string {
+  const source = (name && name.trim()) || (email ? email.split("@")[0] : "");
+  if (!source) return "؟";
+  const parts = source.split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return source.charAt(0).toUpperCase();
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return (parts[0].charAt(0) + parts[1].charAt(0)).toUpperCase();
 }
 
 export function UserMenu() {
-  // Placeholder identity until Agent A provides the real session.
-  const name = "خالد الحازمي";
-  const email = "khalid@skdc.app";
-  const initials = "خح";
+  const { data: session } = useSession();
+  const themeSwitcher = useThemeSwitcher();
+
+  const name = session?.user?.name || (session?.user?.email?.split("@")[0] ?? "مستخدم");
+  const email = session?.user?.email || "";
+  const initials = initialsFromName(session?.user?.name, session?.user?.email);
 
   return (
     <DropdownMenu>
@@ -56,11 +64,11 @@ export function UserMenu() {
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
-        <DropdownMenuItem>
+        <DropdownMenuItem render={(props) => <Link {...props} href="/dashboard/settings" />}>
           <SettingsIcon className="h-4 w-4 text-muted-foreground" />
           <span>الإعدادات</span>
         </DropdownMenuItem>
-        <DropdownMenuItem>
+        <DropdownMenuItem onClick={() => themeSwitcher.open()}>
           <SunMoon className="h-4 w-4 text-muted-foreground" />
           <span>تبديل المظهر</span>
         </DropdownMenuItem>

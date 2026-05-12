@@ -104,7 +104,12 @@
     -webkit-text-fill-color: transparent;
   }
   .text-gradient-aurora {
-    background: linear-gradient(135deg, #c084fc 0%, #f0abfc 35%, #38bdf8 100%);
+    background: linear-gradient(
+      135deg,
+      var(--theme-stop-1, #c084fc) 0%,
+      var(--theme-stop-2, #f0abfc) 35%,
+      var(--theme-stop-3, #38bdf8) 100%
+    );
     -webkit-background-clip: text;
     background-clip: text;
     -webkit-text-fill-color: transparent;
@@ -168,13 +173,13 @@
   .text-shine-aurora {
     background: linear-gradient(
       90deg,
-      #c084fc 0%,
-      #f0abfc 20%,
+      var(--theme-stop-1, #c084fc) 0%,
+      var(--theme-stop-2, #f0abfc) 20%,
       #ffffff 35%,
-      #38bdf8 50%,
+      var(--theme-stop-3, #38bdf8) 50%,
       #ffffff 65%,
-      #f0abfc 80%,
-      #c084fc 100%
+      var(--theme-stop-2, #f0abfc) 80%,
+      var(--theme-stop-1, #c084fc) 100%
     );
     background-size: 200% 100%;
     background-clip: text;
@@ -182,7 +187,7 @@
     color: transparent;
     -webkit-text-fill-color: transparent;
     animation: name-shine 6s ease-in-out infinite;
-    filter: drop-shadow(0 0 24px rgba(167, 139, 250, 0.4));
+    filter: drop-shadow(0 0 24px var(--theme-halo, rgba(167, 139, 250, 0.4)));
   }
   .text-shine-saudi {
     background: linear-gradient(
