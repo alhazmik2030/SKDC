@@ -341,13 +341,57 @@ export default function LandingPage() {
       </section>
 
       {/* ===== FOOTER ===== */}
-      <footer className="border-t border-border/50 py-12">
-        <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 px-6 text-sm text-muted-foreground md:flex-row">
-          <div className="flex items-center gap-2">
-            <Cloud className="h-4 w-4" />
-            <span>SKDC © 2026 — Smart Kitchen Design Cloud</span>
+      <footer className="relative overflow-hidden border-t border-border/50">
+        {/* Subtle aurora glow */}
+        <div className="pointer-events-none absolute inset-0">
+          <div
+            className="absolute left-1/2 top-0 h-40 w-[80%] -translate-x-1/2 opacity-40"
+            style={{
+              background:
+                "radial-gradient(ellipse at center, rgba(167, 139, 250, 0.25), transparent 60%)",
+              filter: "blur(40px)",
+            }}
+          />
+        </div>
+
+        <div className="relative mx-auto max-w-6xl px-6 py-16">
+          {/* Founder card */}
+          <Reveal direction="scale">
+            <div className="mx-auto mb-12 max-w-2xl">
+              <div className="glass relative overflow-hidden rounded-2xl p-8 text-center">
+                <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-violet-500/5 via-transparent to-sky-500/5" />
+                <div className="relative">
+                  <div className="font-mono text-xs uppercase tracking-[0.3em] text-violet-300">
+                    Founder · المؤسس
+                  </div>
+                  <div className="mt-3 text-3xl font-bold tracking-tight text-gradient-aurora md:text-4xl">
+                    خالد الحازمي
+                  </div>
+                  <div className="mt-2 font-mono text-xs text-muted-foreground">
+                    تأسيس · 15 مايو 2026 · الرياض، المملكة العربية السعودية
+                  </div>
+                  <div className="mx-auto mt-6 h-px w-24 bg-gradient-to-r from-transparent via-violet-400/50 to-transparent" />
+                  <div className="mt-6 text-sm italic leading-relaxed text-muted-foreground">
+                    &ldquo;صناعة منتج تقني عربي بمعايير عالمية&rdquo;
+                  </div>
+                </div>
+              </div>
+            </div>
+          </Reveal>
+
+          {/* Bottom bar */}
+          <div className="flex flex-col items-center justify-between gap-4 border-t border-border/50 pt-8 text-sm text-muted-foreground md:flex-row">
+            <div className="flex items-center gap-2">
+              <Cloud className="h-4 w-4" />
+              <span>
+                <span className="font-bold text-foreground">SKDC</span> © 2026
+                — Smart Kitchen Design Cloud
+              </span>
+            </div>
+            <div className="font-mono text-xs">
+              صُنع في المملكة العربية السعودية 🇸🇦
+            </div>
           </div>
-          <div className="font-mono text-xs">صُنع في السعودية 🇸🇦</div>
         </div>
       </footer>
     </main>
