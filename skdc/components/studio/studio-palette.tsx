@@ -1,0 +1,90 @@
+"use client";
+
+import * as React from "react";
+import type { Template } from "@prisma/client";
+import { useI18n } from "@/components/i18n-provider";
+import type { StudioCategory } from "./studio-types";
+
+const BORDER = "rgba(255,255,255,0.08)";
+const GLASS_STRONG = "rgba(8,8,12,0.92)";
+
+export interface StudioPaletteProps {
+  category: StudioCategory;
+  templates: Template[];
+  onAdd: (tpl: Template) => void;
+}
+
+export function StudioPalette({
+  category,
+  templates,
+  onAdd,
+}: StudioPaletteProps) {
+  const { t } = useI18n();
+
+  const filtered = React.useMemo(
+    () => templates.filter((t) => t.category === category),
+    [templates, category],
+  );
+
+  return (
+    <div
+      className="absolute end-[80px] top-[100px] z-[41] w-[280px] overflow-y-auto rounded-2xl border p-3"
+      style={{
+        background: GLASS_STRONG,
+        backdropFilter: "blur(28px)",
+        WebkitBackdropFilter: "blur(28px)",
+        borderColor: BORDER,
+        boxShadow: "0 30px 70px -20px rgba(0,0,0,0.75)",
+        maxHeight: "calc(100vh - 220px)",
+      }}
+    >
+      <h3 className="mb-2.5 flex items-center justify-between text-[12px] font-semibold">
+        <span>{t(`template.category.${category}`)}</span>
+        <span className="text-[10px] font-normal text-white/55">
+          {filtered.length} {t("designer.palette.title")}
+        </span>
+      </h3>
+
+      {filtered.length === 0 ? (
+        <div className="px-2 py-8 text-center text-[11px] text-white/55">
+          {t("empty.templates.category")}
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 gap-1.5">
+          {filtered.map((tpl) => (
+            <button
+              key={tpl.id}
+              type="button"
+              onClick={() => onAdd(tpl)}
+              className="cursor-pointer rounded-[10px] border p-1.5 text-start transition-all hover:bg-[rgba(167,139,250,0.08)]"
+              style={{
+                background: "rgba(255,255,255,0.03)",
+                borderColor: BORDER,
+              }}
+            >
+              <div
+                className="relative mb-1 h-12 rounded-md"
+                style={{
+                  background:
+                    "linear-gradient(135deg, #d6b48a, #b7935d)",
+                }}
+              >
+                <span
+                  aria-hidden
+                  className="absolute left-1/2 top-[60%] block h-[2px] w-1/2 -translate-x-1/2 rounded-[1px]"
+                  style={{ background: "rgba(70,50,22,0.8)" }}
+                />
+              </div>
+              <div className="text-[10px] font-semibold leading-tight">
+                {tpl.name}
+              </div>
+              <div className="mt-px font-mono text-[8px] text-white/55">
+                {tpl.defaultWidth}×{tpl.defaultHeight}×{tpl.defaultDepth}
+              </div>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}

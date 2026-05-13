@@ -2,18 +2,108 @@
 
 import * as React from "react";
 import { Canvas } from "@react-three/fiber";
-import { OrbitControls, Grid, Environment, ContactShadows } from "@react-three/drei";
+import {
+  OrbitControls,
+  Grid,
+  Environment,
+  ContactShadows,
+} from "@react-three/drei";
 import * as THREE from "three";
 import type { DesignerState, DesignerUnit } from "@/components/designer/types";
 import { Unit3D } from "./unit-3d";
 
 const MM = 0.001;
 
+export type TimeOfDay = "morning" | "noon" | "sunset" | "night";
+
+/**
+ * Time-of-day lighting presets.
+ *
+ * `sunDir` is a unit-ish direction the sun points from (relative to room
+ * centre). The actual world position is computed by multiplying with the
+ * room scale inside `SceneContents`, so the sun always sits comfortably
+ * outside the room regardless of room size.
+ *
+ * `envPreset` values must match drei's bundled HDRIs (they ship inside
+ * `@react-three/drei` — no network fetch required).
+ */
+type EnvPreset =
+  | "apartment"
+  | "city"
+  | "sunset"
+  | "night"
+  | "warehouse";
+
+interface TodPreset {
+  sunDir: [number, number, number];
+  sunColor: string;
+  sunIntensity: number;
+  envPreset: EnvPreset;
+  envIntensity: number;
+  hemiSky: string;
+  hemiGround: string;
+  hemiIntensity: number;
+  /** Night mode adds counter spotlights to compensate for the dim sun. */
+  counterSpots: boolean;
+}
+
+const TOD_PRESETS: Record<TimeOfDay, TodPreset> = {
+  morning: {
+    sunDir: [-1.4, 0.45, 0.6],
+    sunColor: "#ffd6a8",
+    sunIntensity: 1.4,
+    envPreset: "apartment",
+    envIntensity: 0.7,
+    hemiSky: "#fff1dc",
+    hemiGround: "#3a2818",
+    hemiIntensity: 0.25,
+    counterSpots: false,
+  },
+  noon: {
+    sunDir: [0.25, 1.6, 0.4],
+    sunColor: "#fffaf0",
+    sunIntensity: 2.2,
+    envPreset: "city",
+    envIntensity: 1.0,
+    hemiSky: "#fffaf0",
+    hemiGround: "#3a2818",
+    hemiIntensity: 0.25,
+    counterSpots: false,
+  },
+  sunset: {
+    sunDir: [1.5, 0.35, 0.5],
+    sunColor: "#ff9a4a",
+    sunIntensity: 1.6,
+    envPreset: "sunset",
+    envIntensity: 1.2,
+    hemiSky: "#ffb98a",
+    hemiGround: "#2a1a10",
+    hemiIntensity: 0.2,
+    counterSpots: false,
+  },
+  night: {
+    sunDir: [0.2, 1.4, 0.3],
+    sunColor: "#7da3c8",
+    sunIntensity: 0.1,
+    envPreset: "night",
+    envIntensity: 0.3,
+    hemiSky: "#1a2438",
+    hemiGround: "#0a0c14",
+    hemiIntensity: 0.15,
+    counterSpots: true,
+  },
+};
+
 export interface Scene3DProps {
   design: DesignerState;
   selectedId: string | null;
   onSelect: (id: string | null) => void;
   ambientLightOn?: boolean;
+  /**
+   * Time of day for the lighting rig. Defaults to "noon" — bright, neutral
+   * daylight suitable for showcasing materials and finishes.
+   */
+  timeOfDay?: TimeOfDay;
 }
 
 export function Scene3D({
@@ -21,6 +111,7 @@ export function Scene3D({
   selectedId,
   onSelect,
   ambientLightOn = true,
+  timeOfDay = "noon",
 }: Scene3DProps) {
   const roomW = design.room.width * MM;
   const roomD = design.room.depth * MM;
@@ -32,6 +123,12 @@ export function Scene3D({
       dpr={[1, 2]}
       camera={{ position: [roomW * 0.9, roomH * 1.1, roomD * 1.2], fov: 50 }}
       onPointerMissed={() => onSelect(null)}
+      gl={{
+        toneMapping: THREE.ACESFilmicToneMapping,
+        toneMappingExposure: 1.0,
+        antialias: true,
+        powerPreference: "high-performance",
+      }}
     >
       <SceneContents
         design={design}
@@ -41,6 +138,7 @@ export function Scene3D({
         roomD={roomD}
         roomH={roomH}
         ambientLightOn={ambientLightOn}
+        timeOfDay={timeOfDay}
       />
     </Canvas>
   );
@@ -54,6 +152,7 @@ function SceneContents({
   roomD,
   roomH,
   ambientLightOn,
+  timeOfDay,
 }: {
   design: DesignerState;
   selectedId: string | null;
@@ -62,31 +161,94 @@ function SceneContents({
   roomD: number;
   roomH: number;
   ambientLightOn: boolean;
+  timeOfDay: TimeOfDay;
 }) {
+  const tod = TOD_PRESETS[timeOfDay];
+
+  // Place the sun a comfortable distance outside the room so the shadow
+  // camera's orthographic frustum (configured below) covers the whole
+  // footprint without clipping.
+  const sunDistance = Math.max(roomW, roomD, roomH) * 2.2;
+  const sunX = roomW / 2 + tod.sunDir[0] * sunDistance;
+  const sunY = tod.sunDir[1] * sunDistance;
+  const sunZ = roomD / 2 + tod.sunDir[2] * sunDistance;
+
+  // When the legacy `ambientLightOn` flag is off the user explicitly asked
+  // for a darker preview — dim everything proportionally rather than
+  // killing the new time-of-day rig entirely.
+  const dimFactor = ambientLightOn ? 1 : 0.2;
+
   return (
     <>
-      {/* === Lighting === */}
-      {ambientLightOn ? <ambientLight intensity={0.5} /> : <ambientLight intensity={0.05} />}
+      {/* === Hemispheric fill (sky/ground bounce) === */}
+      <hemisphereLight
+        intensity={tod.hemiIntensity * dimFactor}
+        color={tod.hemiSky}
+        groundColor={tod.hemiGround}
+      />
+
+      {/* === Sun (key directional light with high-quality shadows) === */}
       <directionalLight
-        position={[roomW * 0.6, roomH * 1.5, roomD * 0.4]}
-        intensity={ambientLightOn ? 1.5 : 0.3}
+        position={[sunX, sunY, sunZ]}
+        intensity={tod.sunIntensity * dimFactor}
+        color={tod.sunColor}
         castShadow
         shadow-mapSize-width={2048}
         shadow-mapSize-height={2048}
+        shadow-bias={-0.0005}
         shadow-camera-far={20}
-        shadow-camera-left={-10}
-        shadow-camera-right={10}
-        shadow-camera-top={10}
-        shadow-camera-bottom={-10}
+        shadow-camera-left={-8}
+        shadow-camera-right={8}
+        shadow-camera-top={8}
+        shadow-camera-bottom={-8}
       />
-      <pointLight position={[roomW * 0.3, roomH * 0.85, roomD * 0.3]} intensity={0.6} color="#fff8e7" />
 
-      {/* === Room walls (open back so we can see inside) === */}
+      {/* === Night-only: counter spotlights to compensate for dim sun === */}
+      {tod.counterSpots ? (
+        <>
+          <spotLight
+            position={[roomW * 0.3, roomH * 0.95, roomD * 0.55]}
+            target-position={[roomW * 0.3, roomH * 0.6, roomD * 0.55]}
+            angle={0.55}
+            penumbra={0.6}
+            intensity={4.5}
+            distance={6}
+            color="#fff1cc"
+            castShadow
+            shadow-mapSize-width={1024}
+            shadow-mapSize-height={1024}
+            shadow-bias={-0.0005}
+          />
+          <spotLight
+            position={[roomW * 0.75, roomH * 0.95, roomD * 0.55]}
+            target-position={[roomW * 0.75, roomH * 0.6, roomD * 0.55]}
+            angle={0.55}
+            penumbra={0.6}
+            intensity={4.5}
+            distance={6}
+            color="#fff1cc"
+            castShadow
+            shadow-mapSize-width={1024}
+            shadow-mapSize-height={1024}
+            shadow-bias={-0.0005}
+          />
+        </>
+      ) : null}
+
+      {/* === Room walls + parquet floor === */}
       <RoomShell width={roomW} depth={roomD} height={roomH} />
 
-      {/* === Floor grid === */}
+      {/* === Window emissive plane on the back wall (drives bloom later) === */}
+      <WindowGlow
+        width={roomW}
+        depth={roomD}
+        height={roomH}
+        timeOfDay={timeOfDay}
+      />
+
+      {/* === Floor grid (kept for designer affordance) === */}
       <Grid
-        position={[roomW / 2, 0, roomD / 2]}
+        position={[roomW / 2, 0.0005, roomD / 2]}
         args={[roomW, roomD]}
         cellSize={0.1}
         cellThickness={0.5}
@@ -98,14 +260,18 @@ function SceneContents({
         infiniteGrid={false}
       />
 
-      {/* === Contact shadows under units === */}
-      <ContactShadows
-        position={[roomW / 2, 0.001, roomD / 2]}
-        opacity={0.4}
-        scale={Math.max(roomW, roomD) * 1.5}
-        blur={2}
-        far={1}
-      />
+      {/* === Soft AO-like ground shadow under the kitchen === */}
+      <React.Suspense fallback={null}>
+        <ContactShadows
+          position={[roomW / 2, 0.002, roomD / 2]}
+          opacity={0.5}
+          scale={12}
+          blur={2.5}
+          far={4}
+          resolution={1024}
+          color="#000"
+        />
+      </React.Suspense>
 
       {/* === Units === */}
       {design.units.map((unit: DesignerUnit) => (
@@ -118,8 +284,13 @@ function SceneContents({
         />
       ))}
 
-      {/* === Environment for nice reflections on appliances/glass === */}
-      <Environment preset="warehouse" />
+      {/* === HDRI environment (drei-bundled, no network) === */}
+      <React.Suspense fallback={null}>
+        <Environment
+          preset={tod.envPreset}
+          environmentIntensity={tod.envIntensity * dimFactor}
+        />
+      </React.Suspense>
 
       {/* === Camera controls === */}
       <OrbitControls
@@ -134,35 +305,113 @@ function SceneContents({
   );
 }
 
-function RoomShell({ width, depth, height }: { width: number; depth: number; height: number }) {
-  const wallColor = "#f5f1ea";
-  const floorColor = "#d4c8b8";
+/**
+ * Bright emissive plane on the back wall, simulating a window. The strong
+ * emissive value (2.5 with a warm colour) is what the post-processing
+ * bloom pass keys off of — it appears as a glowing rectangle even before
+ * bloom is wired up.
+ */
+function WindowGlow({
+  width,
+  depth: _depth,
+  height,
+  timeOfDay,
+}: {
+  width: number;
+  depth: number;
+  height: number;
+  timeOfDay: TimeOfDay;
+}) {
+  // Window roughly 40% of wall width, 45% of wall height, vertically
+  // centred slightly above the counter line.
+  const winW = width * 0.4;
+  const winH = height * 0.45;
+  const winY = height * 0.55;
+
+  // Tint the "sky" outside the window based on time of day.
+  const skyColor =
+    timeOfDay === "sunset"
+      ? "#ff8a3a"
+      : timeOfDay === "morning"
+        ? "#ffd8a8"
+        : timeOfDay === "night"
+          ? "#1a2540"
+          : "#fff6e0";
+
+  const emissiveIntensity = timeOfDay === "night" ? 0.4 : 2.5;
+
+  return (
+    <mesh position={[width / 2, winY, 0.001]}>
+      <planeGeometry args={[winW, winH]} />
+      <meshStandardMaterial
+        color={skyColor}
+        emissive={skyColor}
+        emissiveIntensity={emissiveIntensity}
+        toneMapped={false}
+        side={THREE.DoubleSide}
+      />
+    </mesh>
+  );
+}
+
+function RoomShell({
+  width,
+  depth,
+  height,
+}: {
+  width: number;
+  depth: number;
+  height: number;
+}) {
+  const wallColor = "#f1ebe1"; // PBR plaster — slightly warm off-white
+  const floorColor = "#c9a87a"; // light parquet wood
   const wallThickness = 0.05;
   return (
     <group>
-      {/* Floor */}
+      {/* Floor — PBR parquet-style wood with subtle clearcoat */}
       <mesh
         receiveShadow
         position={[width / 2, -wallThickness / 2, depth / 2]}
       >
         <boxGeometry args={[width, wallThickness, depth]} />
-        <meshStandardMaterial color={floorColor} roughness={0.7} />
+        <meshPhysicalMaterial
+          color={floorColor}
+          roughness={0.55}
+          metalness={0}
+          clearcoat={0.3}
+          clearcoatRoughness={0.4}
+          reflectivity={0.35}
+        />
       </mesh>
-      {/* Back wall */}
+      {/* Back wall — PBR plaster */}
       <mesh
         receiveShadow
         position={[width / 2, height / 2, -wallThickness / 2]}
       >
         <boxGeometry args={[width, height, wallThickness]} />
-        <meshStandardMaterial color={wallColor} roughness={0.85} side={THREE.DoubleSide} />
+        <meshPhysicalMaterial
+          color={wallColor}
+          roughness={0.85}
+          metalness={0}
+          sheen={0.05}
+          sheenColor="#fff5e8"
+          side={THREE.DoubleSide}
+        />
       </mesh>
-      {/* Left wall */}
+      {/* Left wall — PBR plaster */}
       <mesh
         receiveShadow
         position={[-wallThickness / 2, height / 2, depth / 2]}
       >
         <boxGeometry args={[wallThickness, height, depth]} />
-        <meshStandardMaterial color={wallColor} roughness={0.85} side={THREE.DoubleSide} />
+        <meshPhysicalMaterial
+          color={wallColor}
+          roughness={0.85}
+          metalness={0}
+          sheen={0.05}
+          sheenColor="#fff5e8"
+          side={THREE.DoubleSide}
+        />
       </mesh>
     </group>
   );
