@@ -46,15 +46,22 @@ export function Canvas2D({ design, selectedId, onSelect, onMoveUnit }: Canvas2DP
     return Math.round(value / 10) * 10;
   }
 
+  // Why: on narrow viewports the parent flex container can momentarily report 0
+  // dimensions before the ResizeObserver fires, leaving Konva drawing into a
+  // 0x0 canvas (the user sees a black void). Floor the stage at a sensible
+  // minimum so even before the first resize tick we have something visible.
+  const stageW = Math.max(size.w, 320);
+  const stageH = Math.max(size.h, 480);
+
   return (
     <div
       ref={stageRef}
-      className="relative h-full w-full overflow-hidden rounded-2xl bg-white/[0.02]"
+      className="relative h-full min-h-[480px] w-full min-w-[320px] overflow-hidden rounded-2xl bg-gradient-to-br from-white/[0.02] to-transparent"
       onClick={(e) => {
         if (e.target === e.currentTarget) onSelect(null);
       }}
     >
-      <Stage width={size.w} height={size.h}>
+      <Stage width={stageW} height={stageH}>
         <Layer>
           {/* Grid */}
           {drawGrid(size.w, size.h, GRID_MM * SCALE)}
@@ -77,6 +84,26 @@ export function Canvas2D({ design, selectedId, onSelect, onMoveUnit }: Canvas2DP
             fontSize={11}
             fill="rgba(255,255,255,0.5)"
           />
+
+          {/* Empty-state hint when the design has zero units yet */}
+          {design.units.length === 0 ? (
+            <>
+              <Text
+                x={offsetX + roomW / 2 - 110}
+                y={offsetY + roomD / 2 - 24}
+                text="👈 اضغط قالباً من اليمين لتبدأ"
+                fontSize={14}
+                fill="rgba(255,255,255,0.65)"
+              />
+              <Text
+                x={offsetX + roomW / 2 - 90}
+                y={offsetY + roomD / 2 + 4}
+                text="أو افتح الاستديو الجديد ✨"
+                fontSize={11}
+                fill="rgba(167,139,250,0.8)"
+              />
+            </>
+          ) : null}
 
           {/* Units */}
           {design.units.map((u) => (

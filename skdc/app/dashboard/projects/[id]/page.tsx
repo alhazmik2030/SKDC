@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, Pen, Receipt, Scissors, Box } from "lucide-react";
+import { ArrowLeft, Pen, Receipt, Scissors, Box, Sparkles } from "lucide-react";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { getProject } from "@/lib/actions/projects";
 import { listProjectInvoices } from "@/lib/actions/invoices";
@@ -36,6 +36,42 @@ export default async function ProjectDetailPage({
           </Link>
         }
       />
+
+      {/* ===== Studio Mode — featured CTA ===== */}
+      <Link
+        href={`/dashboard/projects/${project.id}/studio`}
+        className="group relative mb-6 flex items-center gap-5 overflow-hidden rounded-3xl p-7 text-white shadow-2xl transition-transform hover:scale-[1.01]"
+        style={{
+          background:
+            "linear-gradient(135deg, var(--theme-stop-1,#a78bfa) 0%, var(--theme-stop-2,#f0abfc) 45%, var(--theme-stop-3,#38bdf8) 100%)",
+          boxShadow:
+            "0 30px 60px -20px var(--theme-halo, rgba(167,139,250,0.55))",
+        }}
+      >
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 opacity-30"
+          style={{
+            background:
+              "radial-gradient(ellipse 60% 80% at 15% 50%, rgba(255,255,255,0.35), transparent 60%)",
+          }}
+        />
+        <div className="relative grid h-16 w-16 shrink-0 place-items-center rounded-2xl bg-white/20 backdrop-blur">
+          <Sparkles className="h-8 w-8" />
+        </div>
+        <div className="relative flex-1">
+          <div className="mb-1 inline-flex items-center gap-2 rounded-full bg-white/20 px-3 py-0.5 text-[11px] font-bold backdrop-blur">
+            ✨ جديد
+          </div>
+          <h3 className="text-xl font-black tracking-tight md:text-2xl">
+            افتح ستوديو التصميم الاحترافي
+          </h3>
+          <p className="mt-1 text-sm text-white/85">
+            تجربة Photoreal مع HDRI + ACES + PBR materials + 12 خامة واقعية + كاميرا متعددة الزوايا + AI commands.
+          </p>
+        </div>
+        <ArrowLeft className="relative h-7 w-7 shrink-0 transition-transform group-hover:-translate-x-2" />
+      </Link>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Link
