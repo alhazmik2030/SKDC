@@ -4,16 +4,24 @@ import { Printer, ArrowRight } from "lucide-react";
 import { getInvoiceForPrint } from "@/lib/actions/invoices";
 import { PrintButton } from "@/components/invoices/print-button";
 
+/**
+ * The Invoice.lineItems JSON has two flavours:
+ *   - "rich" rows produced by the cut-plan engine (label + dimensions + surface area)
+ *   - "simple" rows produced by manual entry / seed data (description + qty + unitPrice)
+ * Both are tolerated below.
+ */
 type LineItem = {
-  label: string;
-  category: string;
-  quantity: number;
-  widthMm: number;
-  depthMm: number;
-  heightMm: number;
-  surfaceM2: number;
-  unitPrice: number;
-  total: number;
+  label?: string;
+  description?: string;
+  category?: string;
+  quantity?: number;
+  qty?: number;
+  widthMm?: number;
+  depthMm?: number;
+  heightMm?: number;
+  surfaceM2?: number;
+  unitPrice?: number;
+  total?: number;
 };
 
 export const dynamic = "force-dynamic";
@@ -125,22 +133,32 @@ export default async function InvoicePage({
               </tr>
             </thead>
             <tbody>
-              {lineItems.map((item, i) => (
-                <tr key={i} className="border-t border-zinc-200">
-                  <td className="px-3 py-3 font-medium">{item.label}</td>
-                  <td className="px-3 py-3 text-xs text-zinc-600">
-                    {CATEGORY_LABEL[item.category] ?? item.category}
-                  </td>
-                  <td className="px-3 py-3 text-center font-mono text-xs">
-                    {item.widthMm}×{item.depthMm}×{item.heightMm}
-                  </td>
-                  <td className="px-3 py-3 text-center font-mono">{item.surfaceM2}</td>
-                  <td className="px-3 py-3 text-center">{item.quantity}</td>
-                  <td className="px-3 py-3 text-left font-mono font-semibold">
-                    {item.total.toFixed(2)} ر.س
-                  </td>
-                </tr>
-              ))}
+              {lineItems.map((item, i) => {
+                const label = item.label ?? item.description ?? "—";
+                const qty = item.quantity ?? item.qty ?? 1;
+                const unit = item.unitPrice ?? 0;
+                const total = item.total ?? qty * unit;
+                const dims =
+                  item.widthMm && item.depthMm && item.heightMm
+                    ? `${item.widthMm}×${item.depthMm}×${item.heightMm}`
+                    : "—";
+                const surface = item.surfaceM2 ?? "—";
+                const cat = item.category
+                  ? CATEGORY_LABEL[item.category] ?? item.category
+                  : "—";
+                return (
+                  <tr key={i} className="border-t border-zinc-200">
+                    <td className="px-3 py-3 font-medium">{label}</td>
+                    <td className="px-3 py-3 text-xs text-zinc-600">{cat}</td>
+                    <td className="px-3 py-3 text-center font-mono text-xs">{dims}</td>
+                    <td className="px-3 py-3 text-center font-mono">{surface}</td>
+                    <td className="px-3 py-3 text-center">{qty}</td>
+                    <td className="px-3 py-3 text-left font-mono font-semibold">
+                      {total.toFixed(2)} ر.س
+                    </td>
+                  </tr>
+                );
+              })}
               {lineItems.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="px-3 py-8 text-center text-zinc-500">
