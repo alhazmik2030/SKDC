@@ -137,6 +137,8 @@ export async function seedExampleKitchens(
     const projectNotes = buildProjectNotes(example);
 
     const created = await db.$transaction(async (tx) => {
+      // Why: 17-unit kitchens with invoice writes can take >5s on Supabase
+      // pooled connections — bump the default 5s budget.
       const customer = await tx.customer.create({
         data: {
           workspaceId,
@@ -217,7 +219,7 @@ export async function seedExampleKitchens(
       }
 
       return { unitsAdded, invoicesAdded };
-    });
+    }, { maxWait: 15_000, timeout: 60_000 });
 
     result.customersAdded++;
     result.projectsAdded++;
