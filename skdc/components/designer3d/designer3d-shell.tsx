@@ -77,12 +77,12 @@ export function Designer3DShell({
         </div>
       </div>
 
-      {/* Back to 2D link */}
+      {/* Back to Studio link */}
       <Link
-        href={`/dashboard/projects/${projectId}/designer`}
+        href={`/dashboard/projects/${projectId}/studio`}
         className="glass absolute bottom-4 left-4 z-10 inline-flex items-center gap-2 rounded-xl border border-border bg-card/70 px-3 py-2 text-xs text-muted-foreground backdrop-blur-xl hover:text-foreground"
       >
-        ← {t("designer3d.backTo2D")}
+        ← {t("designer3d.backToStudio")}
       </Link>
 
       {/* The 3D scene */}

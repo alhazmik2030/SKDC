@@ -39,7 +39,7 @@ const NAV: NavItem[] = [
   { href: "/dashboard/factories", labelKey: "nav.factories", icon: Building2 },
   { href: "/dashboard/factory-orders", labelKey: "nav.factoryOrders", icon: ClipboardList },
   { href: "/dashboard/shipments", labelKey: "nav.shipments", icon: Ship },
-  { href: "/dashboard/designer", labelKey: "nav.designer", icon: PenTool },
+  { href: "/dashboard/studio", labelKey: "nav.studio", icon: PenTool },
   { href: "/dashboard/settings", labelKey: "nav.settings", icon: Settings },
 ];
 

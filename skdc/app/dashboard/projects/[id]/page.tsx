@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, Pen, Receipt, Scissors, Box, Sparkles } from "lucide-react";
+import { ArrowLeft, Receipt, Scissors, Box, Sparkles } from "lucide-react";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { getProject } from "@/lib/actions/projects";
 import { listProjectInvoices } from "@/lib/actions/invoices";
@@ -73,26 +73,7 @@ export default async function ProjectDetailPage({
         <ArrowLeft className="relative h-7 w-7 shrink-0 transition-transform group-hover:-translate-x-2" />
       </Link>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Link
-          href={`/dashboard/projects/${project.id}/designer`}
-          className="glass group flex flex-col items-start gap-3 rounded-2xl p-6 transition-colors hover:border-violet-400/40"
-        >
-          <div className="grid h-12 w-12 place-items-center rounded-xl bg-gradient-to-br from-[var(--theme-stop-1,#a78bfa)] to-[var(--theme-stop-3,#38bdf8)] shadow-lg">
-            <Pen className="h-6 w-6 text-background" />
-          </div>
-          <div>
-            <h3 className="text-base font-bold">محرر 2D</h3>
-            <p className="mt-1 text-xs text-muted-foreground">
-              تصميم بـ Canvas + سحب وإفلات.
-            </p>
-          </div>
-          <span className="mt-auto inline-flex items-center gap-1 text-xs text-violet-200">
-            ابدأ التصميم
-            <ArrowLeft className="h-3 w-3 transition-transform group-hover:-translate-x-1" />
-          </span>
-        </Link>
-
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         <Link
           href={`/dashboard/projects/${project.id}/3d`}
           className="glass group flex flex-col items-start gap-3 rounded-2xl p-6 transition-colors hover:border-fuchsia-400/40"
