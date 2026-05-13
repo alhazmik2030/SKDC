@@ -61,7 +61,10 @@ export const genericCsvAdapter: MachineAdapter = {
       ].join(","),
     );
 
-    const contents = [header, ...rows].join("\n");
+    // Why: prefix with UTF-8 BOM so Excel (Windows) opens Arabic / Chinese
+    // text correctly. Without it, Excel falls back to Windows-1252 and
+    // mangles non-Latin labels into "ط©" / "â€" garbage.
+    const contents = "﻿" + [header, ...rows].join("\r\n");
     const filename = `cutlist-${plan.projectName.replace(/\s+/g, "-")}.csv`;
 
     return {

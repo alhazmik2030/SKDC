@@ -50,6 +50,10 @@ export function Unit3D({ unit, options, selected, onSelect }: Unit3DProps) {
   const [doorsOpen, setDoorsOpen] = React.useState(false);
   const doorAngle = useDoorAnimation(doorsOpen);
 
+  // Drawer state — slides out instead of swinging
+  const [drawersOpen, setDrawersOpen] = React.useState(false);
+  const drawerSlide = useDrawerAnimation(drawersOpen);
+
   const doors = options?.doors ?? 0;
   const drawers = options?.drawers ?? 0;
   const isAppliance = unit.category === "APPLIANCE";
@@ -83,7 +87,7 @@ export function Unit3D({ unit, options, selected, onSelect }: Unit3DProps) {
           {/* === Cabinet body (sides + top + bottom + back) === */}
           <CabinetBody width={w} height={h} depth={d} color={bodyColor} panel={panel} />
 
-          {/* === Drawers (front faces stacked) === */}
+          {/* === Drawers (front faces stacked, slide-out animation) === */}
           {drawers > 0 ? (
             <DrawerStack
               width={w}
@@ -92,6 +96,11 @@ export function Unit3D({ unit, options, selected, onSelect }: Unit3DProps) {
               count={drawers}
               color={facadeColor}
               panel={panel}
+              slide={drawerSlide}
+              onTogglePointerDown={(e: ThreeEvent<MouseEvent>) => {
+                e.stopPropagation();
+                setDrawersOpen((v) => !v);
+              }}
             />
           ) : null}
 
@@ -127,22 +136,25 @@ export function Unit3D({ unit, options, selected, onSelect }: Unit3DProps) {
         </mesh>
       ) : null}
 
-      {/* Label on top (HTML overlay) */}
-      <Html
-        position={[0, h / 2 + 0.05, 0]}
-        center
-        style={{
-          pointerEvents: "none",
-          color: selected ? "#fff" : "rgba(255,255,255,0.6)",
-          fontSize: "10px",
-          background: "rgba(0,0,0,0.5)",
-          padding: "2px 6px",
-          borderRadius: "4px",
-          whiteSpace: "nowrap",
-        }}
-      >
-        {unit.templateName}
-      </Html>
+      {/* Label — shown ONLY when this unit is selected, to keep the scene clean. */}
+      {selected ? (
+        <Html
+          position={[0, h / 2 + 0.05, 0]}
+          center
+          style={{
+            pointerEvents: "none",
+            color: "#fff",
+            fontSize: "10px",
+            background: "rgba(0,0,0,0.7)",
+            padding: "2px 6px",
+            borderRadius: "4px",
+            whiteSpace: "nowrap",
+            backdropFilter: "blur(4px)",
+          }}
+        >
+          {unit.templateName}
+        </Html>
+      ) : null}
     </group>
   );
 }
@@ -288,6 +300,8 @@ function DrawerStack({
   count,
   color,
   panel,
+  slide,
+  onTogglePointerDown,
 }: {
   width: number;
   height: number;
@@ -295,21 +309,38 @@ function DrawerStack({
   count: number;
   color: string;
   panel: number;
+  slide: number;
+  onTogglePointerDown: (e: ThreeEvent<MouseEvent>) => void;
 }) {
   const drawerHeight = (height - 2 * panel - 0.004 - (count - 1) * 0.002) / count;
   const drawerWidth = width - 2 * panel - 0.004;
   const frontZ = depth / 2 + panel / 4;
+  // Slide forward up to ~80% of the cabinet depth when fully open.
+  const maxSlide = depth * 0.8;
 
   return (
     <>
       {Array.from({ length: count }).map((_, i) => {
         const y = height / 2 - panel - drawerHeight / 2 - i * (drawerHeight + 0.002);
         return (
-          <group key={i} position={[0, y, frontZ]}>
+          <group
+            key={i}
+            position={[0, y, frontZ + slide * maxSlide]}
+            onPointerDown={onTogglePointerDown}
+          >
             <mesh>
               <boxGeometry args={[drawerWidth, drawerHeight, panel * 0.9]} />
               <meshStandardMaterial color={color} roughness={0.4} />
             </mesh>
+            {/* Drawer body — visible when slid out, gives the impression of a real drawer box */}
+            {slide > 0.05 ? (
+              <mesh position={[0, 0, -depth * 0.4]}>
+                <boxGeometry
+                  args={[drawerWidth * 0.95, drawerHeight * 0.85, depth * 0.78]}
+                />
+                <meshStandardMaterial color="#3a2a1a" roughness={0.9} />
+              </mesh>
+            ) : null}
             {/* Drawer handle */}
             <mesh position={[0, 0, panel * 0.45 + 0.005]}>
               <boxGeometry args={[drawerWidth * 0.4, 0.012, 0.012]} />
@@ -400,7 +431,7 @@ function ApplianceBox({
 }
 
 // ============================================================
-// Animation hook — smoothly opens/closes doors
+// Animation hooks
 // ============================================================
 function useDoorAnimation(open: boolean) {
   const target = React.useRef(0);
@@ -419,6 +450,27 @@ function useDoorAnimation(open: boolean) {
   });
 
   return angle;
+}
+
+/** Drawer slide animation — returns a 0..1 progress that the drawer multiplies
+ *  against its max slide distance. Smooth ease toward the target. */
+function useDrawerAnimation(open: boolean) {
+  const target = React.useRef(0);
+  const [progress, setProgress] = React.useState(0);
+
+  React.useEffect(() => {
+    target.current = open ? 1 : 0;
+  }, [open]);
+
+  useFrame((_, delta) => {
+    setProgress((cur) => {
+      const diff = target.current - cur;
+      if (Math.abs(diff) < 0.002) return target.current;
+      return cur + diff * Math.min(delta * 6, 1);
+    });
+  });
+
+  return progress;
 }
 
 function darken(hex: string, amount: number): string {

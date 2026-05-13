@@ -205,8 +205,15 @@ function extractOptions(unit: DesignerUnit) {
   const hasGlass = name.includes("زجاج");
   const hasLed = false; // future: per-unit toggle
 
+  // Why: only assign doors when the unit name explicitly mentions doors
+  // (ضلفة/ضلفتين/ضلفه). A drawer unit must NOT get a default 2-door overlay —
+  // that's what was making drawers visually swing like doors when clicked.
+  // If neither doors nor drawers are detected, fall back to a single door so
+  // the cabinet still looks finished rather than a hollow box.
+  const inferredDoors = doors > 0 ? doors : drawers === 0 ? 1 : 0;
+
   return {
-    doors: doors > 0 ? doors : 2, // default to 2 doors
+    doors: inferredDoors,
     drawers,
     hasGlass,
     glassTint: hasGlass ? "smoked" : undefined,
