@@ -1,0 +1,406 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<title>SKDC Studio Mockups — اختر التصميم</title>
+<style>
+  :root {
+    --bg: #050507;
+    --text: #f5f5f7;
+    --muted: rgba(255,255,255,0.55);
+    --border: rgba(255,255,255,0.08);
+    --aurora-1: #a78bfa;
+    --aurora-2: #f0abfc;
+    --aurora-3: #38bdf8;
+    --halo: rgba(167,139,250,0.45);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg); color: var(--text);
+    font-family: "Cairo", system-ui, sans-serif;
+    min-height: 100vh; padding: 40px 24px 80px;
+  }
+  body::before {
+    content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+    background: radial-gradient(ellipse 80% 40% at 50% 0%, var(--halo), transparent 65%);
+    opacity: 0.45;
+  }
+  .container { position: relative; z-index: 1; max-width: 1200px; margin: 0 auto; }
+  .hero { text-align: center; margin-bottom: 50px; }
+  .hero .tag {
+    display: inline-block; padding: 6px 14px; border-radius: 100px;
+    background: rgba(167,139,250,0.1); border: 1px solid rgba(167,139,250,0.3);
+    color: var(--aurora-1); font-size: 11px; font-weight: 600; margin-bottom: 16px;
+    letter-spacing: 0.08em;
+  }
+  .hero h1 {
+    font-size: 42px; font-weight: 900; line-height: 1.1;
+    background: linear-gradient(135deg, var(--aurora-1) 0%, var(--aurora-2) 50%, var(--aurora-3) 100%);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+    margin-bottom: 12px;
+  }
+  .hero p { color: var(--muted); font-size: 16px; max-width: 680px; margin: 0 auto; line-height: 1.6; }
+
+  /* Mockup grid */
+  .grid { display: grid; gap: 18px; }
+  @media (min-width: 900px) { .grid { grid-template-columns: 1fr 1fr; } }
+
+  .card {
+    background: rgba(15,15,18,0.55); backdrop-filter: blur(20px);
+    border: 1px solid var(--border); border-radius: 20px;
+    padding: 24px;
+    transition: all 0.25s;
+    position: relative;
+    overflow: hidden;
+  }
+  .card:hover { border-color: var(--aurora-1); transform: translateY(-4px); box-shadow: 0 30px 60px -20px rgba(0,0,0,0.5); }
+  .card.featured {
+    grid-column: 1 / -1;
+    border-color: rgba(167,139,250,0.4);
+    background: linear-gradient(135deg, rgba(167,139,250,0.08), rgba(56,189,248,0.05));
+  }
+  .card .num {
+    position: absolute; top: 18px; left: 18px;
+    width: 36px; height: 36px;
+    background: rgba(255,255,255,0.05); border: 1px solid var(--border);
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 900; color: var(--muted);
+  }
+  .card.featured .num {
+    background: linear-gradient(135deg, var(--aurora-1), var(--aurora-2));
+    color: white; border-color: transparent;
+  }
+  .card.featured .badge-top {
+    position: absolute; top: 18px; left: 64px;
+    background: linear-gradient(135deg, var(--aurora-1), var(--aurora-2));
+    padding: 5px 10px; border-radius: 100px;
+    font-size: 10px; font-weight: 700; color: white;
+    box-shadow: 0 8px 20px -6px var(--halo);
+  }
+  .card h2 {
+    font-size: 22px; font-weight: 800; margin-bottom: 8px; padding-right: 56px;
+    line-height: 1.3;
+  }
+  .card .style { color: var(--muted); font-size: 12px; margin-bottom: 14px; padding-right: 56px; }
+
+  .preview-frame {
+    aspect-ratio: 16 / 9;
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 14px;
+    border: 1px solid var(--border);
+    box-shadow: 0 14px 35px -10px rgba(0,0,0,0.5);
+    background: #050507;
+    position: relative;
+  }
+  .preview-frame iframe {
+    width: 100%; height: 100%; border: 0;
+    transform: scale(0.5); transform-origin: 0 0;
+    width: 200%; height: 200%;
+    pointer-events: none;
+  }
+  .preview-frame .open-overlay {
+    position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(0,0,0,0.5); opacity: 0;
+    transition: opacity 0.2s;
+    cursor: pointer;
+  }
+  .preview-frame:hover .open-overlay { opacity: 1; }
+  .preview-frame .open-overlay span {
+    background: linear-gradient(135deg, var(--aurora-1), var(--aurora-2));
+    padding: 10px 24px; border-radius: 100px;
+    font-weight: 700; color: white;
+  }
+
+  .features { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
+  .feature {
+    background: rgba(255,255,255,0.04); border: 1px solid var(--border);
+    padding: 4px 10px; border-radius: 100px;
+    font-size: 11px; color: var(--text);
+  }
+  .feature.new {
+    background: linear-gradient(135deg, rgba(167,139,250,0.18), rgba(240,171,252,0.14));
+    border-color: rgba(167,139,250,0.4);
+    color: #d4c4ff;
+  }
+  .feature .icon { margin-left: 4px; }
+
+  .actions { display: flex; gap: 8px; margin-top: 14px; }
+  .btn-open {
+    flex: 1;
+    background: linear-gradient(135deg, #fff 0%, #f1f1f1 100%);
+    color: #050507; font-weight: 700;
+    padding: 10px 16px; border-radius: 10px;
+    text-decoration: none; text-align: center;
+    font-size: 13px;
+    display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  }
+  .btn-open:hover { transform: translateY(-1px); }
+  .btn-pick {
+    background: rgba(167,139,250,0.15);
+    border: 1px solid rgba(167,139,250,0.4);
+    color: var(--aurora-1); font-weight: 700;
+    padding: 10px 14px; border-radius: 10px;
+    cursor: pointer; font-size: 13px;
+    display: inline-flex; align-items: center; gap: 6px;
+  }
+  .btn-pick:hover { background: rgba(167,139,250,0.25); }
+
+  /* New tech section */
+  .new-tech {
+    margin: 60px 0 30px;
+    padding: 24px;
+    border: 1px solid rgba(167,139,250,0.3);
+    background: linear-gradient(135deg, rgba(167,139,250,0.06), rgba(56,189,248,0.04));
+    border-radius: 20px;
+  }
+  .new-tech h2 {
+    font-size: 24px;
+    background: linear-gradient(135deg, var(--aurora-1), var(--aurora-3));
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+    margin-bottom: 6px;
+  }
+  .new-tech p.lead { color: var(--muted); margin-bottom: 20px; }
+  .tech-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
+  .tech-card {
+    background: rgba(10,10,15,0.5); border: 1px solid var(--border);
+    border-radius: 14px; padding: 14px;
+  }
+  .tech-card .h {
+    display: flex; align-items: center; gap: 8px; margin-bottom: 6px;
+    font-weight: 700; font-size: 14px;
+  }
+  .tech-card .emoji { font-size: 18px; }
+  .tech-card p { font-size: 12px; color: var(--muted); line-height: 1.5; }
+  .tech-card .impact {
+    margin-top: 8px; font-size: 11px;
+    background: rgba(0,200,120,0.08); color: #86efac;
+    padding: 4px 8px; border-radius: 6px;
+    display: inline-block;
+  }
+  .tech-card .cost {
+    margin-top: 4px; font-size: 11px;
+    background: rgba(0,150,255,0.08); color: #93c5fd;
+    padding: 4px 8px; border-radius: 6px;
+    display: inline-block;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="hero">
+    <span class="tag">SKDC STUDIO · MOCKUP REVIEW</span>
+    <h1>اختر التصميم اللي تحب</h1>
+    <p>خمسة تصاميم احترافية للاستديو السحابي. كل واحد بنكهة مختلفة. الـ Hybrid Premium في الأسفل (مقترح) يجمع الأفضل من كل العوالم + التقنيات الجديدة.</p>
+  </div>
+
+  <div class="grid">
+    <!-- Mockup 1: Sketchfab Style -->
+    <div class="card">
+      <div class="num">1</div>
+      <h2>Side Icons + Canvas</h2>
+      <p class="style">Sketchfab-style · أيقونات يمين، canvas كبير</p>
+      <div class="preview-frame">
+        <iframe src="./1-sketchfab-side-icons.html"></iframe>
+        <a href="./1-sketchfab-side-icons.html" target="_blank" class="open-overlay"><span>افتح كاملاً ↗</span></a>
+      </div>
+      <div class="features">
+        <span class="feature">📦 8 فئات بأيقونات</span>
+        <span class="feature">🖼️ Canvas 80% من الشاشة</span>
+        <span class="feature">📐 6 camera presets</span>
+        <span class="feature new">⚡ WebGPU ready</span>
+      </div>
+      <div class="actions">
+        <a href="./1-sketchfab-side-icons.html" target="_blank" class="btn-open">🔍 افتح المعاينة</a>
+      </div>
+    </div>
+
+    <!-- Mockup 2: Figma Floating -->
+    <div class="card">
+      <div class="num">2</div>
+      <h2>Floating Carousel</h2>
+      <p class="style">Figma-style · شريط عائم + canvas كامل</p>
+      <div class="preview-frame">
+        <iframe src="./2-figma-floating.html"></iframe>
+        <a href="./2-figma-floating.html" target="_blank" class="open-overlay"><span>افتح كاملاً ↗</span></a>
+      </div>
+      <div class="features">
+        <span class="feature">🎨 شريط عائم بـ 7 فئات</span>
+        <span class="feature">☀️ Time-of-day picker</span>
+        <span class="feature">🎯 Inspector panel جانبي</span>
+        <span class="feature new">⚡ WebGPU ready</span>
+      </div>
+      <div class="actions">
+        <a href="./2-figma-floating.html" target="_blank" class="btn-open">🔍 افتح المعاينة</a>
+      </div>
+    </div>
+
+    <!-- Mockup 3: Cinema Immersive -->
+    <div class="card">
+      <div class="num">3</div>
+      <h2>Cinema Showroom</h2>
+      <p class="style">Immersive · بدون chrome — للعرض على العميل</p>
+      <div class="preview-frame">
+        <iframe src="./3-cinema-immersive.html"></iframe>
+        <a href="./3-cinema-immersive.html" target="_blank" class="open-overlay"><span>افتح كاملاً ↗</span></a>
+      </div>
+      <div class="features">
+        <span class="feature">🎬 Fullscreen 100%</span>
+        <span class="feature">🌅 شمس + شباك</span>
+        <span class="feature">⌨️ keyboard shortcuts</span>
+        <span class="feature new">🤖 hover-reveal HUD</span>
+      </div>
+      <div class="actions">
+        <a href="./3-cinema-immersive.html" target="_blank" class="btn-open">🔍 افتح المعاينة</a>
+      </div>
+    </div>
+
+    <!-- Mockup 4: Adobe Pro -->
+    <div class="card">
+      <div class="num">4</div>
+      <h2>Pro Workspace</h2>
+      <p class="style">Adobe-style · شريط أدوات كامل + panels</p>
+      <div class="preview-frame">
+        <iframe src="./4-adobe-pro.html"></iframe>
+        <a href="./4-adobe-pro.html" target="_blank" class="open-overlay"><span>افتح كاملاً ↗</span></a>
+      </div>
+      <div class="features">
+        <span class="feature">📑 Menu bar كامل</span>
+        <span class="feature">🎚️ Toolbar متقدم</span>
+        <span class="feature">📊 status bar</span>
+        <span class="feature">🎨 12 خامة</span>
+      </div>
+      <div class="actions">
+        <a href="./4-adobe-pro.html" target="_blank" class="btn-open">🔍 افتح المعاينة</a>
+      </div>
+    </div>
+
+    <!-- Mockup 5: Hybrid Premium (FEATURED) -->
+    <div class="card featured">
+      <div class="num">5</div>
+      <div class="badge-top">⭐ مقترح — الأفضل من كل العوالم</div>
+      <h2 style="margin-top: 24px;">Hybrid Premium Studio</h2>
+      <p class="style">يجمع: Cinema fullscreen + Side icons + Floating controls + AI bar + new technologies</p>
+      <div class="preview-frame">
+        <iframe src="./5-hybrid-premium.html"></iframe>
+        <a href="./5-hybrid-premium.html" target="_blank" class="open-overlay"><span>افتح كاملاً ↗</span></a>
+      </div>
+      <div class="features">
+        <span class="feature new">⚡ WebGPU + Babylon.js</span>
+        <span class="feature new">🎬 three-gpu-pathtracer</span>
+        <span class="feature new">📱 model-viewer (AR للعميل)</span>
+        <span class="feature new">🤖 AI Texture (StableMaterials)</span>
+        <span class="feature new">🌌 Gaussian Splat ready</span>
+        <span class="feature new">✨ MCP voice commands</span>
+        <span class="feature">🌅 شمس + 4 أوقات</span>
+        <span class="feature">📐 5 camera presets</span>
+        <span class="feature">🎨 6 خامات + 6 أسطح</span>
+        <span class="feature">⌨️ ⌘K AI prompt</span>
+      </div>
+      <div class="actions">
+        <a href="./5-hybrid-premium.html" target="_blank" class="btn-open">🔍 افتح المعاينة الكاملة</a>
+        <button class="btn-pick">✓ أختار هذا التصميم</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- New Technologies summary -->
+  <div class="new-tech">
+    <h2>🚀 التقنيات الجديدة المُدمجة في Hybrid Premium</h2>
+    <p class="lead">كل تقنية تركض على جهاز العميل (مش سيرفرنا) = صفر تكلفة تشغيلية لنا</p>
+
+    <div class="tech-grid">
+      <div class="tech-card">
+        <div class="h"><span class="emoji">⚡</span> WebGPU + Babylon.js</div>
+        <p>أحدث API للـ GPU في المتصفح — 6-13x أسرع من WebGL. Babylon.js يقدم أفضل WebGPU implementation.</p>
+        <div class="impact">+6x performance</div>
+        <div class="cost">$0 cost</div>
+      </div>
+
+      <div class="tech-card">
+        <div class="h"><span class="emoji">🎬</span> three-gpu-pathtracer</div>
+        <p>Path tracing على GPU العميل — جودة V-Ray بدون سيرفر. 4K rendering في 5-10 ثوانٍ.</p>
+        <div class="impact">جودة سينمائية</div>
+        <div class="cost">$0 (client GPU)</div>
+      </div>
+
+      <div class="tech-card">
+        <div class="h"><span class="emoji">📱</span> model-viewer Web Component</div>
+        <p>Google's AR component. العميل يفتح رابط على iPhone → يحط المطبخ في بيته بالـ AR. مدمج في iOS + Android.</p>
+        <div class="impact">AR على كل الجوالات</div>
+        <div class="cost">$0 (تقنية مدمجة)</div>
+      </div>
+
+      <div class="tech-card">
+        <div class="h"><span class="emoji">🤖</span> AI Texture Synthesizer</div>
+        <p>StableMaterials (Hugging Face) — اكتب "خشب جوز داكن لامع" → يولّد PBR map كامل في 8 ثوانٍ. مع cache دائم.</p>
+        <div class="impact">خامات لا نهائية</div>
+        <div class="cost">~$0.04/مرة، cached للأبد</div>
+      </div>
+
+      <div class="tech-card">
+        <div class="h"><span class="emoji">🌌</span> 3D Gaussian Splatting</div>
+        <p>SuperSplat by PlayCanvas. العميل يصوّر مطبخه القديم بـ Polycam → يصير خلفية واقعية للتصميم الجديد.</p>
+        <div class="impact">واقعية حقيقية</div>
+        <div class="cost">$0 (client viewer)</div>
+      </div>
+
+      <div class="tech-card">
+        <div class="h"><span class="emoji">✨</span> MCP AI Commands</div>
+        <p>اكتب أوامر بالعربي → Claude يحرّك الكاميرا، يضيف وحدات، يلتقط لقطات. الـ MCP اللي ربطته بالموقع.</p>
+        <div class="impact">تصميم بالأوامر</div>
+        <div class="cost">$0 (API موجود)</div>
+      </div>
+
+      <div class="tech-card">
+        <div class="h"><span class="emoji">🌅</span> HDRI + Sun Simulation</div>
+        <p>إضاءة 360° واقعية من Poly Haven. شمس تتحرك مع 4 أوقات — صباح/ظهر/مغرب/ليل. ظلال ناعمة.</p>
+        <div class="impact">إضاءة Lumion-level</div>
+        <div class="cost">$0.01 storage</div>
+      </div>
+
+      <div class="tech-card">
+        <div class="h"><span class="emoji">🎨</span> PBR + Procedural Shaders</div>
+        <p>50+ PBR texture set من Poly Haven (CC0) + shaders للرخام والخشب بـ GLSL على GPU العميل.</p>
+        <div class="impact">جودة احترافية</div>
+        <div class="cost">$0.02 storage/شهر</div>
+      </div>
+
+      <div class="tech-card">
+        <div class="h"><span class="emoji">📷</span> Screenshot + WhatsApp Share</div>
+        <p>زر "لقطة" → PNG 4K → ترفع R2 → بوت WhatsApp يرسل للعميل مع رابط AR.</p>
+        <div class="impact">تحويل عميل فوري</div>
+        <div class="cost">$0.001/لقطة</div>
+      </div>
+
+      <div class="tech-card">
+        <div class="h"><span class="emoji">🚪</span> Drawer Slide + Door Hinge</div>
+        <p>كل درج يفتح مستقل، كل باب يدور على مفصلته الصحيحة. Click بسيط على الواجهة → animation سلسة.</p>
+        <div class="impact">تفاعل واقعي</div>
+        <div class="cost">$0</div>
+      </div>
+
+      <div class="tech-card">
+        <div class="h"><span class="emoji">🚰</span> Sinks + Mixers GLB</div>
+        <p>50+ موديل CC0 من Sketchfab + Poly Haven (مغاسل، خلاطات، شفاطات، أفران، ثلاجات). مضغوطة بـ Draco.</p>
+        <div class="impact">تفاصيل سينمائية</div>
+        <div class="cost">$0.05 storage مرة واحدة</div>
+      </div>
+
+      <div class="tech-card">
+        <div class="h"><span class="emoji">🎯</span> Drawer-into-View Dolly</div>
+        <p>Double-click على درج → الكاميرا تقترب + الدرج يفتح + ترى التفاصيل (المسامير، المفصلات).</p>
+        <div class="impact">عمق فحص فريد</div>
+        <div class="cost">$0</div>
+      </div>
+    </div>
+  </div>
+
+  <div style="text-align:center; margin-top: 30px; color: var(--muted); font-size: 13px;">
+    💡 فتح كل mockup منفرد: استخدم زر "افتح المعاينة" أو افتح ملف HTML مباشرة في docs/studio-mockups/
+  </div>
+</div>
+</body>
+</html>

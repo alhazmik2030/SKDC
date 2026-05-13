@@ -1,0 +1,466 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<title>SKDC Studio — Mockup 5: Hybrid Premium (Recommended Final)</title>
+<style>
+  :root {
+    --bg: #050507; --text: #f5f5f7; --muted: rgba(255,255,255,0.55);
+    --border: rgba(255,255,255,0.08);
+    --aurora-1: #a78bfa; --aurora-2: #f0abfc; --aurora-3: #38bdf8;
+    --halo: rgba(167,139,250,0.45);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: "Cairo", system-ui, sans-serif; overflow: hidden; height: 100vh; }
+  .stage { position: fixed; inset: 0; }
+
+  /* ===== Background scene ===== */
+  .scene-full {
+    position: absolute; inset: 0;
+    background:
+      radial-gradient(ellipse 60% 40% at 65% 35%, rgba(255,210,140,0.15), transparent 60%),
+      linear-gradient(180deg, #0d0d10 0%, #050507 100%);
+  }
+  .scene-full::before {
+    content:""; position:absolute; inset:0;
+    background: linear-gradient(180deg, transparent 58%, rgba(70,45,22,0.42) 58%, rgba(40,25,12,0.7) 100%);
+  }
+  .scene-full::after {
+    content:""; position:absolute; inset:0;
+    background:
+      repeating-linear-gradient(0deg, rgba(0,0,0,.05) 0 1px, transparent 1px 50px),
+      repeating-linear-gradient(90deg, rgba(0,0,0,.05) 0 1px, transparent 1px 50px);
+    transform: perspective(1100px) rotateX(62deg);
+    transform-origin: 50% 100%;
+    background-position: 50% 78%;
+  }
+  .window {
+    position: absolute; top: 15%; right: 30%; width: 18%; height: 26%;
+    background: linear-gradient(135deg, rgba(255,228,170,0.45), rgba(255,210,140,0.7));
+    border: 10px solid rgba(20,20,20,0.85);
+    border-radius: 4px;
+    box-shadow: 0 0 80px 15px rgba(255,210,140,0.18);
+  }
+
+  .cabs { position: absolute; inset: 18% 12% 18% 12%; }
+  .cab { position:absolute; bottom:0;
+    background: linear-gradient(180deg, #ddb88e 0%, #b08755 100%);
+    border-radius:3px;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.25), inset 0 -1px 0 rgba(0,0,0,.3), 0 6px 18px rgba(0,0,0,.55);
+  }
+  .cab::after { content:""; position:absolute; left:50%; bottom:18%; width:32%; height:2.5px;
+    transform:translateX(-50%); background:rgba(70,50,22,.85); border-radius:2px; }
+  .tl { background: linear-gradient(180deg, #835f3b 0%, #533c25 100%); height:90%; }
+  .up { background: linear-gradient(180deg, #f0cea2 0%, #d6b078 100%); top: 5%; bottom: auto; }
+  .island {
+    background: linear-gradient(180deg, #b08e64 0%, #876a45 100%);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.25), 0 14px 32px rgba(0,0,0,.65);
+  }
+  .island::before {
+    content:""; position:absolute; top:-7px; left:-2px; right:-2px; height:7px;
+    background: linear-gradient(180deg, #ffffff 0%, #d8d2c4 100%);
+    border-radius: 4px 4px 0 0;
+  }
+
+  /* Selected unit halo */
+  .selected {
+    box-shadow: 0 0 0 2px var(--aurora-1), 0 0 32px var(--halo), inset 0 1px 0 rgba(255,255,255,.25);
+  }
+
+  /* ===== HUD: Top bar — minimal & themed ===== */
+  .top-hud {
+    position: absolute; top: 12px; left: 12px; right: 12px;
+    display: flex; align-items: center; justify-content: space-between;
+    z-index: 50; gap: 12px;
+  }
+  .pill-group {
+    background: rgba(10,10,15,0.78); backdrop-filter: blur(20px);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    display: flex; align-items: center; gap: 2px;
+    padding: 4px;
+    box-shadow: 0 14px 40px -14px rgba(0,0,0,0.6);
+  }
+  .pill-btn {
+    background: transparent; border: 0; color: var(--muted);
+    padding: 7px 12px; border-radius: 10px; cursor: pointer;
+    font-size: 12px; display: inline-flex; align-items: center; gap: 6px;
+    font-family: inherit;
+  }
+  .pill-btn:hover { background: rgba(255,255,255,0.06); color: var(--text); }
+  .pill-btn.active {
+    background: linear-gradient(135deg, var(--aurora-1), var(--aurora-2));
+    color: white;
+    box-shadow: 0 6px 18px -6px var(--halo);
+  }
+  .exit-btn {
+    background: rgba(244,63,94,0.18); border: 1px solid rgba(244,63,94,0.4);
+    color: #fda4af; padding: 9px 14px; border-radius: 12px; cursor: pointer;
+    backdrop-filter: blur(20px); font-weight: 600; font-size: 13px;
+    display: inline-flex; align-items: center; gap: 6px;
+    box-shadow: 0 14px 40px -14px rgba(244,63,94,0.3);
+  }
+  .photoreal-btn {
+    background: linear-gradient(135deg, #fff, #f1f1f1); color: #050507;
+    padding: 9px 14px; border-radius: 12px; cursor: pointer;
+    font-weight: 700; font-size: 13px; border: 0;
+    display: inline-flex; align-items: center; gap: 6px;
+    box-shadow: 0 14px 40px -14px rgba(255,255,255,0.4);
+  }
+  .ghost {
+    background: rgba(10,10,15,0.78); backdrop-filter: blur(20px);
+    border: 1px solid var(--border);
+    color: var(--text); padding: 9px 12px; border-radius: 12px; cursor: pointer;
+    font-size: 12px;
+  }
+  .center-title {
+    background: rgba(10,10,15,0.6); backdrop-filter: blur(20px);
+    border: 1px solid var(--border);
+    padding: 8px 16px; border-radius: 100px;
+    font-size: 12px; color: var(--text);
+    display: inline-flex; align-items: center; gap: 8px;
+  }
+  .center-title .meta { color: var(--muted); font-size: 11px; }
+
+  /* ===== Right side — Template icons (collapsed by default) ===== */
+  .side-rail {
+    position: absolute; top: 50%; right: 12px;
+    transform: translateY(-50%);
+    background: rgba(10,10,15,0.85); backdrop-filter: blur(24px);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    padding: 8px;
+    display: flex; flex-direction: column; gap: 4px;
+    z-index: 40;
+    box-shadow: 0 30px 70px -20px rgba(0,0,0,0.7);
+  }
+  .rail-icon {
+    width: 52px; height: 52px;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid transparent;
+    border-radius: 12px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 2px; cursor: pointer;
+    color: var(--muted);
+    position: relative;
+    transition: all 0.18s;
+  }
+  .rail-icon:hover {
+    background: rgba(255,255,255,0.06);
+    border-color: var(--border);
+    color: var(--text);
+    transform: translateX(-3px);
+  }
+  .rail-icon.active {
+    background: linear-gradient(135deg, var(--aurora-1), var(--aurora-2));
+    color: white;
+    box-shadow: 0 12px 25px -8px var(--halo);
+  }
+  .rail-icon svg { width: 20px; height: 20px; }
+  .rail-icon .lbl { font-size: 8.5px; font-weight: 600; }
+  .rail-icon .cnt {
+    position: absolute; top: -2px; right: -2px;
+    background: var(--aurora-2); color: #050507;
+    font-size: 9px; font-weight: 700;
+    padding: 1px 5px; border-radius: 8px;
+  }
+
+  /* Palette popout (when category clicked) */
+  .palette {
+    position: absolute; top: 50%; right: 90px;
+    transform: translateY(-50%);
+    width: 280px;
+    background: rgba(10,10,15,0.92); backdrop-filter: blur(28px);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    padding: 14px;
+    z-index: 41;
+    box-shadow: 0 30px 70px -20px rgba(0,0,0,0.75);
+  }
+  .palette h3 {
+    font-size: 12px; margin-bottom: 10px;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .palette h3 span { color: var(--muted); font-weight: 400; font-size: 11px; }
+  .pgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; max-height: 360px; overflow-y: auto; }
+  .ptpl {
+    background: rgba(255,255,255,0.03); border: 1px solid var(--border);
+    border-radius: 10px; padding: 6px; cursor: pointer;
+    transition: all 0.15s;
+  }
+  .ptpl:hover { border-color: var(--aurora-1); background: rgba(167,139,250,0.08); }
+  .ptpl .img { height: 48px; border-radius: 6px; background: linear-gradient(135deg, #d6b48a, #b7935d); margin-bottom: 4px; position: relative; overflow: hidden; }
+  .ptpl .img::after { content:""; position:absolute; left:50%; top:60%; width:50%; height:2px;
+    transform:translateX(-50%); background:rgba(70,50,22,.8); border-radius:1px; }
+  .ptpl .name { font-size: 10px; font-weight: 600; }
+  .ptpl .dim { font-family: monospace; font-size: 8.5px; color: var(--muted); margin-top: 1px; }
+
+  /* ===== Left side — Inspector (only when selected) ===== */
+  .inspector {
+    position: absolute; top: 50%; left: 12px;
+    transform: translateY(-50%);
+    width: 260px;
+    background: rgba(10,10,15,0.92); backdrop-filter: blur(28px);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    padding: 14px;
+    z-index: 40;
+    box-shadow: 0 30px 70px -20px rgba(0,0,0,0.75);
+  }
+  .insp-h {
+    display: flex; align-items: center; gap: 8px;
+    margin-bottom: 12px; padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+  }
+  .insp-h .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--aurora-1); box-shadow: 0 0 10px var(--aurora-1); }
+  .insp-h .name { font-size: 13px; font-weight: 700; flex: 1; }
+  .insp-row {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 6px 0;
+    font-size: 12px;
+  }
+  .insp-row .k { color: var(--muted); }
+  .insp-row .v {
+    font-family: monospace;
+    background: rgba(255,255,255,0.04);
+    padding: 3px 8px; border-radius: 6px;
+    border: 1px solid var(--border);
+  }
+  .insp-section { margin-top: 12px; }
+  .insp-section .h {
+    font-size: 9px; text-transform: uppercase; letter-spacing: 0.1em;
+    color: var(--muted); margin-bottom: 6px;
+  }
+  .sw-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 4px; }
+  .sw {
+    aspect-ratio: 1; border-radius: 6px; cursor: pointer;
+    border: 2px solid transparent;
+  }
+  .sw.sel { border-color: white; box-shadow: 0 0 0 1px var(--bg) inset; }
+  .insp-actions {
+    display: flex; gap: 4px; margin-top: 12px;
+  }
+  .insp-btn {
+    flex: 1; padding: 7px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-radius: 8px; cursor: pointer;
+    font-size: 11px;
+  }
+  .insp-btn.danger { color: #fda4af; border-color: rgba(244,63,94,0.3); }
+
+  /* ===== Bottom — Camera + Time ===== */
+  .bottom-bar {
+    position: absolute; bottom: 16px; left: 50%; transform: translateX(-50%);
+    display: flex; gap: 8px; z-index: 50;
+  }
+  .cam-pill {
+    background: rgba(10,10,15,0.82); backdrop-filter: blur(24px);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 4px;
+    display: flex; gap: 2px;
+    box-shadow: 0 14px 40px -14px rgba(0,0,0,0.6);
+  }
+  .cam-btn {
+    padding: 7px 12px; border-radius: 10px; cursor: pointer;
+    background: transparent; border: 0;
+    color: var(--muted); font-size: 12px; font-family: inherit;
+    display: inline-flex; align-items: center; gap: 6px;
+  }
+  .cam-btn:hover { background: rgba(255,255,255,0.06); color: var(--text); }
+  .cam-btn.active { background: linear-gradient(135deg, var(--aurora-3), var(--aurora-1)); color: white; }
+
+  /* AI command bar (bottom center, distinctive) */
+  .ai-bar {
+    position: absolute; bottom: 16px; right: 16px;
+    background: linear-gradient(135deg, rgba(167,139,250,0.15), rgba(240,171,252,0.1));
+    border: 1px solid rgba(167,139,250,0.3);
+    backdrop-filter: blur(24px);
+    border-radius: 14px;
+    padding: 8px 14px;
+    display: flex; gap: 8px; align-items: center;
+    z-index: 50;
+    box-shadow: 0 14px 40px -14px var(--halo);
+  }
+  .ai-bar .icon {
+    width: 28px; height: 28px;
+    background: linear-gradient(135deg, var(--aurora-1), var(--aurora-2));
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px;
+  }
+  .ai-bar input {
+    background: transparent; border: 0; color: var(--text);
+    font-size: 12px; width: 220px;
+    font-family: inherit;
+    outline: none;
+  }
+  .ai-bar input::placeholder { color: var(--muted); }
+  .ai-bar kbd {
+    background: rgba(255,255,255,0.06);
+    padding: 2px 6px; border-radius: 4px;
+    font-size: 10px; font-family: monospace;
+    color: var(--muted);
+  }
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="scene-full">
+    <div class="window"></div>
+    <div class="cabs">
+      <div class="cab tl" style="right:0%; width:8%;"></div>
+      <div class="cab tl" style="right:9%; width:8%;"></div>
+      <div class="cab" style="right:18%; width:13%; height:38%;"></div>
+      <div class="cab" style="right:32%; width:13%; height:38%;"></div>
+      <div class="cab" style="right:46%; width:13%; height:38%;"></div>
+      <div class="cab selected" style="right:60%; width:13%; height:38%;"></div>
+      <div class="cab" style="right:74%; width:13%; height:38%;"></div>
+      <div class="cab up" style="right:18%; width:13%; height:18%;"></div>
+      <div class="cab up" style="right:32%; width:13%; height:18%;"></div>
+      <div class="cab up" style="right:60%; width:13%; height:18%;"></div>
+      <div class="cab up" style="right:74%; width:13%; height:18%;"></div>
+      <div class="cab island" style="left:28%; bottom:0; width:38%; height:24%;"></div>
+    </div>
+  </div>
+
+  <div class="top-hud">
+    <button class="exit-btn">✕ خروج من الاستديو</button>
+    <div class="center-title">
+      مطبخ فيلا الراجحي
+      <span class="meta">U-Shape • 17 وحدة • 6.0 × 4.5 م</span>
+    </div>
+    <div style="display:flex; gap:8px;">
+      <button class="ghost">💾 حفظ</button>
+      <button class="ghost">↗️ مشاركة</button>
+      <button class="photoreal-btn">🎬 Photoreal</button>
+    </div>
+  </div>
+
+  <!-- Right side — collapsed icons rail -->
+  <div class="side-rail">
+    <div class="rail-icon active">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="12" width="18" height="9"/><line x1="9" y1="14" x2="9" y2="19"/><line x1="15" y1="14" x2="15" y2="19"/></svg>
+      <span class="lbl">سفلية</span>
+      <span class="cnt">8</span>
+    </div>
+    <div class="rail-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="7"/><line x1="9" y1="5" x2="9" y2="8"/></svg>
+      <span class="lbl">علوية</span>
+      <span class="cnt">6</span>
+    </div>
+    <div class="rail-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 21V3h18"/><path d="M9 21V9h12"/></svg>
+      <span class="lbl">أركان</span>
+      <span class="cnt">4</span>
+    </div>
+    <div class="rail-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="6" y="2" width="12" height="20"/></svg>
+      <span class="lbl">دواليب</span>
+      <span class="cnt">5</span>
+    </div>
+    <div class="rail-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="12" cy="12" r="4"/></svg>
+      <span class="lbl">أجهزة</span>
+      <span class="cnt">8</span>
+    </div>
+    <div class="rail-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 12h18v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-6z"/><path d="M12 12V4"/></svg>
+      <span class="lbl">مغاسل</span>
+      <span class="cnt">3</span>
+    </div>
+    <div class="rail-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polygon points="12 2 2 7 12 12 22 7 12 2"/></svg>
+      <span class="lbl">خامات</span>
+      <span class="cnt">12</span>
+    </div>
+    <div class="rail-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/></svg>
+      <span class="lbl">إضاءة</span>
+    </div>
+  </div>
+
+  <!-- Palette popout for active category -->
+  <div class="palette">
+    <h3>سفلية <span>8 قوالب</span></h3>
+    <div class="pgrid">
+      <div class="ptpl"><div class="img"></div><div class="name">درج واحد</div><div class="dim">600×720×580</div></div>
+      <div class="ptpl"><div class="img"></div><div class="name">درجين</div><div class="dim">600×720×580</div></div>
+      <div class="ptpl"><div class="img"></div><div class="name">ثلاثة أدراج</div><div class="dim">600×720×580</div></div>
+      <div class="ptpl"><div class="img"></div><div class="name">أربعة أدراج</div><div class="dim">600×720×580</div></div>
+      <div class="ptpl"><div class="img"></div><div class="name">ضلفة واحدة</div><div class="dim">600×720×580</div></div>
+      <div class="ptpl"><div class="img"></div><div class="name">ضلفتين</div><div class="dim">900×720×580</div></div>
+    </div>
+  </div>
+
+  <!-- Left inspector for selected unit -->
+  <div class="inspector">
+    <div class="insp-h">
+      <span class="dot"></span>
+      <span class="name">وحدة سفلية درجين</span>
+    </div>
+    <div class="insp-row"><span class="k">العرض</span><span class="v">600 مم</span></div>
+    <div class="insp-row"><span class="k">العمق</span><span class="v">580 مم</span></div>
+    <div class="insp-row"><span class="k">الارتفاع</span><span class="v">720 مم</span></div>
+    <div class="insp-row"><span class="k">X</span><span class="v">1,200</span></div>
+    <div class="insp-row"><span class="k">Y</span><span class="v">0</span></div>
+    <div class="insp-row"><span class="k">التدوير</span><span class="v">0°</span></div>
+
+    <div class="insp-section">
+      <div class="h">الخامة</div>
+      <div class="sw-grid">
+        <div class="sw sel" style="background:#b7935d" title="بلوط"></div>
+        <div class="sw" style="background:#7d5b3a" title="جوز"></div>
+        <div class="sw" style="background:#eee9e1" title="لاكر أبيض"></div>
+        <div class="sw" style="background:#1c1c1c" title="مات أسود"></div>
+        <div class="sw" style="background:#c8a9d4" title="بنفسجي"></div>
+        <div class="sw" style="background:#a0c4b8" title="منت"></div>
+      </div>
+    </div>
+
+    <div class="insp-section">
+      <div class="h">السطح</div>
+      <div class="sw-grid">
+        <div class="sw" style="background:linear-gradient(135deg,#fff,#ccc)" title="رخام كاراره"></div>
+        <div class="sw sel" style="background:linear-gradient(135deg,#fff8e7,#d4caa8)" title="كوارتز"></div>
+        <div class="sw" style="background:linear-gradient(135deg,#1c1c1c,#3a3a3a)" title="جرانيت"></div>
+        <div class="sw" style="background:linear-gradient(135deg,#ebc99e,#a87842)" title="خشب"></div>
+        <div class="sw" style="background:linear-gradient(135deg,#e0e0e0,#999)" title="HPL"></div>
+        <div class="sw" style="background:linear-gradient(135deg,#a0d0d8,#5a8a92)" title="زجاج"></div>
+      </div>
+    </div>
+
+    <div class="insp-actions">
+      <button class="insp-btn">↻ تدوير 90°</button>
+      <button class="insp-btn danger">🗑️ حذف</button>
+    </div>
+  </div>
+
+  <!-- Bottom — camera presets -->
+  <div class="bottom-bar">
+    <div class="cam-pill">
+      <button class="cam-btn active">📐 منظور</button>
+      <button class="cam-btn">⬇ فوق</button>
+      <button class="cam-btn">→ جانب</button>
+      <button class="cam-btn">🚶 مشي</button>
+      <button class="cam-btn">↺ إعادة</button>
+    </div>
+    <div class="cam-pill">
+      <button class="cam-btn active">🌅</button>
+      <button class="cam-btn">☀️</button>
+      <button class="cam-btn">🌇</button>
+      <button class="cam-btn">🌙</button>
+    </div>
+  </div>
+
+  <!-- AI assistant (bottom right) -->
+  <div class="ai-bar">
+    <div class="icon">✨</div>
+    <input placeholder="اكتب: غيّر الخامة لرخام أبيض..." />
+    <kbd>⌘K</kbd>
+  </div>
+</div>
+</body>
+</html>

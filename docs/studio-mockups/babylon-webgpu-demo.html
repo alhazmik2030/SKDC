@@ -1,0 +1,476 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<title>SKDC Studio — Babylon.js + WebGPU Live Demo</title>
+<style>
+  :root {
+    --aurora-1: #a78bfa; --aurora-2: #f0abfc; --aurora-3: #38bdf8;
+    --halo: rgba(167,139,250,0.45);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 100%; height: 100%; overflow: hidden; }
+  body {
+    background: #050507;
+    color: #f5f5f7;
+    font-family: "Cairo", system-ui, sans-serif;
+  }
+  #renderCanvas { width: 100vw; height: 100vh; display: block; outline: none; touch-action: none; }
+
+  /* HUD */
+  .hud-top {
+    position: fixed; top: 12px; left: 12px; right: 12px;
+    display: flex; align-items: center; justify-content: space-between;
+    z-index: 50; pointer-events: none;
+  }
+  .hud-top > * { pointer-events: auto; }
+  .badge {
+    background: linear-gradient(135deg, rgba(167,139,250,0.18), rgba(56,189,248,0.12));
+    border: 1px solid rgba(167,139,250,0.4);
+    backdrop-filter: blur(20px);
+    padding: 8px 14px; border-radius: 12px;
+    font-size: 12px; font-weight: 600;
+    display: inline-flex; align-items: center; gap: 8px;
+  }
+  .badge .dot { width:8px; height:8px; border-radius:50%; background:#22c55e; box-shadow:0 0 8px #22c55e; animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100% { opacity:1 } 50% { opacity:0.5 } }
+  .badge.engine { color: var(--aurora-1); }
+
+  .center-title {
+    background: rgba(10,10,15,0.7); backdrop-filter: blur(20px);
+    border: 1px solid rgba(255,255,255,0.08);
+    padding: 8px 18px; border-radius: 100px;
+    font-size: 13px;
+  }
+  .center-title .meta { color: rgba(255,255,255,0.55); font-size: 11px; margin-right: 8px; }
+
+  .ghost {
+    background: rgba(10,10,15,0.78); backdrop-filter: blur(20px);
+    border: 1px solid rgba(255,255,255,0.08);
+    color: #f5f5f7;
+    padding: 9px 14px; border-radius: 12px; cursor: pointer;
+    font-family: inherit; font-size: 13px;
+    display: inline-flex; align-items: center; gap: 6px;
+  }
+  .ghost:hover { background: rgba(255,255,255,0.06); }
+
+  /* Camera controls */
+  .cam-pill {
+    position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%);
+    background: rgba(10,10,15,0.85); backdrop-filter: blur(24px);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 14px;
+    padding: 4px;
+    display: flex; gap: 2px;
+    z-index: 50;
+    box-shadow: 0 14px 40px -14px rgba(0,0,0,0.6);
+  }
+  .cam-btn {
+    padding: 8px 14px; border-radius: 10px; cursor: pointer;
+    background: transparent; border: 0;
+    color: rgba(255,255,255,0.6); font-size: 12px; font-family: inherit;
+  }
+  .cam-btn:hover { background: rgba(255,255,255,0.06); color: #f5f5f7; }
+  .cam-btn.active { background: linear-gradient(135deg, var(--aurora-3), var(--aurora-1)); color: white; }
+
+  /* Right-side material picker */
+  .mat-picker {
+    position: fixed; top: 50%; right: 16px; transform: translateY(-50%);
+    background: rgba(10,10,15,0.88); backdrop-filter: blur(24px);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 18px;
+    padding: 12px;
+    z-index: 50;
+    box-shadow: 0 30px 70px -20px rgba(0,0,0,0.7);
+  }
+  .mat-picker h4 { font-size: 11px; color: rgba(255,255,255,0.55); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.1em; }
+  .mat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+  .mat-btn {
+    width: 60px; height: 60px;
+    border-radius: 12px; border: 2px solid transparent;
+    cursor: pointer; position: relative;
+    background-size: cover;
+  }
+  .mat-btn.active { border-color: white; box-shadow: 0 0 0 1px var(--aurora-1); }
+  .mat-btn .lbl {
+    position: absolute; bottom: 4px; left: 4px; right: 4px;
+    background: rgba(0,0,0,0.75); backdrop-filter: blur(6px);
+    color: white; font-size: 9px;
+    padding: 2px 4px; border-radius: 4px; text-align: center;
+    font-weight: 600;
+  }
+
+  /* Loading indicator */
+  .loading {
+    position: fixed; inset: 0;
+    background: #050507;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    z-index: 100;
+    transition: opacity 0.5s;
+  }
+  .loading.hidden { opacity: 0; pointer-events: none; }
+  .loading .ring {
+    width: 60px; height: 60px;
+    border: 3px solid rgba(167,139,250,0.2);
+    border-top-color: var(--aurora-1);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading .label {
+    margin-top: 16px; color: rgba(255,255,255,0.7); font-size: 13px;
+  }
+  .loading .sub { margin-top: 4px; color: rgba(255,255,255,0.4); font-size: 11px; font-family: monospace; }
+
+  /* Stats */
+  .stats {
+    position: fixed; bottom: 16px; right: 16px;
+    background: rgba(10,10,15,0.85); backdrop-filter: blur(20px);
+    border: 1px solid rgba(255,255,255,0.08);
+    padding: 8px 12px; border-radius: 10px;
+    font-family: monospace; font-size: 11px;
+    color: rgba(255,255,255,0.7);
+    z-index: 50;
+    line-height: 1.6;
+  }
+  .stats span { color: var(--aurora-1); }
+</style>
+</head>
+<body>
+
+<div class="loading" id="loading">
+  <div class="ring"></div>
+  <div class="label">جاري تشغيل Babylon.js + WebGPU...</div>
+  <div class="sub" id="loadDetail">checking engine support</div>
+</div>
+
+<canvas id="renderCanvas"></canvas>
+
+<div class="hud-top">
+  <div style="display:flex; gap: 8px;">
+    <div class="badge"><span class="dot"></span><span id="engineLabel">WebGPU Active</span></div>
+    <div class="badge engine">⚡ Babylon.js v7</div>
+  </div>
+
+  <div class="center-title">
+    🍳 SKDC Studio Demo
+    <span class="meta">Babylon.js + WebGPU + PBR</span>
+  </div>
+
+  <button class="ghost" onclick="document.exitFullscreen?.() || document.body.requestFullscreen?.()">⛶ Fullscreen</button>
+</div>
+
+<!-- Camera presets -->
+<div class="cam-pill">
+  <button class="cam-btn active" onclick="setCamera('perspective')">📐 منظور</button>
+  <button class="cam-btn" onclick="setCamera('top')">⬇ من فوق</button>
+  <button class="cam-btn" onclick="setCamera('front')">→ أمام</button>
+  <button class="cam-btn" onclick="setCamera('walk')">🚶 مشي</button>
+  <button class="cam-btn" onclick="setCamera('reset')">↺ إعادة</button>
+</div>
+
+<!-- Material picker -->
+<div class="mat-picker">
+  <h4>الخامة</h4>
+  <div class="mat-grid">
+    <div class="mat-btn active" style="background:linear-gradient(135deg,#d6b48a,#b7935d)" onclick="setMaterial('oak')" title="بلوط"><span class="lbl">بلوط</span></div>
+    <div class="mat-btn" style="background:linear-gradient(135deg,#7d5b3a,#4a3520)" onclick="setMaterial('walnut')" title="جوز"><span class="lbl">جوز</span></div>
+    <div class="mat-btn" style="background:linear-gradient(135deg,#f5f0e6,#e0dad0)" onclick="setMaterial('white')" title="لاكر أبيض"><span class="lbl">أبيض</span></div>
+    <div class="mat-btn" style="background:linear-gradient(135deg,#2a2a2a,#0a0a0a)" onclick="setMaterial('black')" title="مات أسود"><span class="lbl">أسود</span></div>
+    <div class="mat-btn" style="background:linear-gradient(135deg,#e8e2d4,#c5beae)" onclick="setMaterial('marble')" title="رخام"><span class="lbl">رخام</span></div>
+    <div class="mat-btn" style="background:linear-gradient(135deg,#3a3a3a,#1a1a1a)" onclick="setMaterial('granite')" title="جرانيت"><span class="lbl">جرانيت</span></div>
+  </div>
+</div>
+
+<!-- Stats -->
+<div class="stats">
+  Engine: <span id="engineType">…</span><br>
+  FPS: <span id="fps">…</span><br>
+  Cabinets: <span id="cabCount">0</span>
+</div>
+
+<!-- Load Babylon.js from CDN -->
+<script src="https://cdn.babylonjs.com/babylon.js"></script>
+<script src="https://cdn.babylonjs.com/materialsLibrary/babylonjs.materials.min.js"></script>
+
+<script>
+const canvas = document.getElementById("renderCanvas");
+const loadingEl = document.getElementById("loading");
+const loadDetail = document.getElementById("loadDetail");
+const engineLabel = document.getElementById("engineLabel");
+const engineType = document.getElementById("engineType");
+const fpsEl = document.getElementById("fps");
+const cabCountEl = document.getElementById("cabCount");
+
+let engine, scene, camera, materials = {}, currentMaterial = "oak";
+let cabinets = [];
+
+const MATERIALS = {
+  oak:     { albedo: new BABYLON.Color3(0.75, 0.58, 0.36), roughness: 0.55, metallic: 0.0 },
+  walnut:  { albedo: new BABYLON.Color3(0.32, 0.22, 0.13), roughness: 0.5,  metallic: 0.0 },
+  white:   { albedo: new BABYLON.Color3(0.94, 0.92, 0.88), roughness: 0.25, metallic: 0.05 },
+  black:   { albedo: new BABYLON.Color3(0.08, 0.08, 0.09), roughness: 0.4,  metallic: 0.15 },
+  marble:  { albedo: new BABYLON.Color3(0.92, 0.89, 0.83), roughness: 0.12, metallic: 0.0 },
+  granite: { albedo: new BABYLON.Color3(0.15, 0.15, 0.16), roughness: 0.3,  metallic: 0.1 },
+};
+
+async function createEngine() {
+  loadDetail.textContent = "trying WebGPU...";
+  try {
+    const supported = await BABYLON.WebGPUEngine.IsSupportedAsync;
+    if (supported) {
+      loadDetail.textContent = "initializing WebGPU engine...";
+      const eng = new BABYLON.WebGPUEngine(canvas, { antialias: true });
+      await eng.initAsync();
+      engineLabel.textContent = "WebGPU Active";
+      engineType.textContent = "WebGPU";
+      return eng;
+    }
+  } catch (e) {
+    console.warn("WebGPU failed, falling back to WebGL:", e);
+  }
+  loadDetail.textContent = "WebGPU unavailable — using WebGL2...";
+  engineLabel.textContent = "WebGL2 Fallback";
+  engineType.textContent = "WebGL2";
+  return new BABYLON.Engine(canvas, true, { stencil: true, preserveDrawingBuffer: true });
+}
+
+function createScene() {
+  scene = new BABYLON.Scene(engine);
+  scene.clearColor = new BABYLON.Color4(0.02, 0.02, 0.03, 1);
+  scene.ambientColor = new BABYLON.Color3(0.3, 0.3, 0.35);
+
+  // ===== Camera =====
+  camera = new BABYLON.ArcRotateCamera(
+    "cam",
+    -Math.PI / 2.5,
+    Math.PI / 2.6,
+    8,
+    new BABYLON.Vector3(0, 0.7, 0),
+    scene
+  );
+  camera.attachControl(canvas, true);
+  camera.minZ = 0.05;
+  camera.lowerRadiusLimit = 1.5;
+  camera.upperRadiusLimit = 20;
+  camera.wheelPrecision = 30;
+  camera.panningSensibility = 200;
+
+  // ===== Lighting =====
+  // Soft ambient via hemispheric
+  const hemi = new BABYLON.HemisphericLight("hemi", new BABYLON.Vector3(0, 1, 0), scene);
+  hemi.intensity = 0.35;
+  hemi.groundColor = new BABYLON.Color3(0.25, 0.22, 0.18);
+
+  // Warm sun coming through the window
+  const sun = new BABYLON.DirectionalLight("sun", new BABYLON.Vector3(-0.6, -0.8, 0.4), scene);
+  sun.intensity = 1.6;
+  sun.diffuse = new BABYLON.Color3(1.0, 0.95, 0.82);
+  sun.specular = new BABYLON.Color3(1, 0.95, 0.82);
+
+  // Shadow generator
+  const shadow = new BABYLON.ShadowGenerator(1024, sun);
+  shadow.usePercentageCloserFiltering = true;
+  shadow.filteringQuality = BABYLON.ShadowGenerator.QUALITY_HIGH;
+
+  // ===== Floor =====
+  const floor = BABYLON.MeshBuilder.CreateGround("floor", { width: 8, height: 6, subdivisions: 4 }, scene);
+  const floorMat = new BABYLON.PBRMaterial("floorMat", scene);
+  floorMat.albedoColor = new BABYLON.Color3(0.85, 0.83, 0.78);
+  floorMat.roughness = 0.45;
+  floorMat.metallic = 0.0;
+  floor.material = floorMat;
+  floor.receiveShadows = true;
+
+  // ===== Walls =====
+  const wallMat = new BABYLON.PBRMaterial("wallMat", scene);
+  wallMat.albedoColor = new BABYLON.Color3(0.94, 0.91, 0.86);
+  wallMat.roughness = 0.85;
+  wallMat.metallic = 0;
+
+  const backWall = BABYLON.MeshBuilder.CreateBox("backWall", { width: 8, height: 2.7, depth: 0.1 }, scene);
+  backWall.position.set(0, 1.35, -3);
+  backWall.material = wallMat;
+
+  const leftWall = BABYLON.MeshBuilder.CreateBox("leftWall", { width: 0.1, height: 2.7, depth: 6 }, scene);
+  leftWall.position.set(-4, 1.35, 0);
+  leftWall.material = wallMat;
+
+  // ===== Window in back wall (just a bright emissive plane for effect) =====
+  const windowPane = BABYLON.MeshBuilder.CreatePlane("window", { width: 1.4, height: 1.0 }, scene);
+  windowPane.position.set(1, 1.7, -2.94);
+  windowPane.rotation.y = Math.PI;
+  const windowMat = new BABYLON.PBRMaterial("windowMat", scene);
+  windowMat.emissiveColor = new BABYLON.Color3(1.0, 0.92, 0.78);
+  windowMat.emissiveIntensity = 1.4;
+  windowMat.roughness = 0.05;
+  windowMat.metallic = 0;
+  windowPane.material = windowMat;
+
+  // ===== Build a row of cabinets =====
+  buildCabinets(shadow);
+
+  // ===== Countertop =====
+  const counter = BABYLON.MeshBuilder.CreateBox("counter", { width: 4.3, height: 0.04, depth: 0.62 }, scene);
+  counter.position.set(0, 0.74, -2.5);
+  const counterMat = new BABYLON.PBRMaterial("counterMat", scene);
+  counterMat.albedoColor = new BABYLON.Color3(0.94, 0.92, 0.88);
+  counterMat.roughness = 0.15;
+  counterMat.metallic = 0.05;
+  counter.material = counterMat;
+  shadow.addShadowCaster(counter);
+
+  // Update count
+  cabCountEl.textContent = cabinets.length;
+
+  return scene;
+}
+
+function buildCabinets(shadow) {
+  // Base cabinet material
+  function makeMat(name) {
+    const m = new BABYLON.PBRMaterial(`mat-${name}`, scene);
+    const spec = MATERIALS[name];
+    m.albedoColor = spec.albedo;
+    m.roughness = spec.roughness;
+    m.metallic = spec.metallic;
+    materials[name] = m;
+    return m;
+  }
+  Object.keys(MATERIALS).forEach(makeMat);
+
+  // Cabinet handle material
+  const handleMat = new BABYLON.PBRMaterial("handleMat", scene);
+  handleMat.albedoColor = new BABYLON.Color3(0.7, 0.7, 0.72);
+  handleMat.metallic = 0.95;
+  handleMat.roughness = 0.2;
+
+  // Lower cabinets (a row of 6)
+  for (let i = 0; i < 6; i++) {
+    const w = 0.6, h = 0.72, d = 0.58;
+    const x = -1.8 + i * 0.65;
+    const z = -2.5;
+
+    // Body
+    const body = BABYLON.MeshBuilder.CreateBox(`cab-body-${i}`, { width: w * 0.95, height: h, depth: d }, scene);
+    body.position.set(x, h / 2, z);
+    body.material = materials[currentMaterial];
+    body.receiveShadows = true;
+    shadow.addShadowCaster(body);
+    cabinets.push(body);
+
+    // Two doors (left + right)
+    for (let side = 0; side < 2; side++) {
+      const dw = (w * 0.95 - 0.01) / 2;
+      const door = BABYLON.MeshBuilder.CreateBox(`door-${i}-${side}`, { width: dw, height: h * 0.95, depth: 0.018 }, scene);
+      door.position.set(x + (side === 0 ? -dw / 2 - 0.002 : dw / 2 + 0.002), h / 2, z + d / 2 + 0.01);
+      door.material = materials[currentMaterial];
+      shadow.addShadowCaster(door);
+      cabinets.push(door);
+
+      // Handle
+      const handle = BABYLON.MeshBuilder.CreateBox(`handle-${i}-${side}`, { width: 0.012, height: 0.08, depth: 0.012 }, scene);
+      const hx = side === 0 ? x + dw / 2 - 0.03 : x - dw / 2 + 0.03;
+      handle.position.set(hx, h / 2, z + d / 2 + 0.025);
+      handle.material = handleMat;
+    }
+  }
+
+  // Upper cabinets (row above)
+  for (let i = 0; i < 6; i++) {
+    const w = 0.6, h = 0.62, d = 0.35;
+    const x = -1.8 + i * 0.65;
+    const z = -2.7;
+
+    const body = BABYLON.MeshBuilder.CreateBox(`up-body-${i}`, { width: w * 0.95, height: h, depth: d }, scene);
+    body.position.set(x, 1.85, z);
+    body.material = materials[currentMaterial];
+    shadow.addShadowCaster(body);
+    cabinets.push(body);
+
+    // Single door for upper
+    const door = BABYLON.MeshBuilder.CreateBox(`up-door-${i}`, { width: w * 0.95 - 0.01, height: h * 0.95, depth: 0.018 }, scene);
+    door.position.set(x, 1.85, z + d / 2 + 0.01);
+    door.material = materials[currentMaterial];
+    shadow.addShadowCaster(door);
+    cabinets.push(door);
+
+    // Handle (bottom edge)
+    const handle = BABYLON.MeshBuilder.CreateBox(`up-handle-${i}`, { width: 0.16, height: 0.012, depth: 0.012 }, scene);
+    handle.position.set(x, 1.85 - h / 2 + 0.06, z + d / 2 + 0.025);
+    handle.material = handleMat;
+  }
+
+  // Tall pantry on the far right
+  const tall = BABYLON.MeshBuilder.CreateBox("tall", { width: 0.55, height: 2.3, depth: 0.6 }, scene);
+  tall.position.set(2.3, 1.15, -2.5);
+  tall.material = materials.walnut;
+  shadow.addShadowCaster(tall);
+  cabinets.push(tall);
+  const tallDoor = BABYLON.MeshBuilder.CreateBox("tall-door", { width: 0.54, height: 2.28, depth: 0.018 }, scene);
+  tallDoor.position.set(2.3, 1.15, -2.18);
+  tallDoor.material = materials.walnut;
+  cabinets.push(tallDoor);
+  const tallHandle = BABYLON.MeshBuilder.CreateBox("tall-handle", { width: 0.012, height: 0.1, depth: 0.012 }, scene);
+  tallHandle.position.set(2.55, 1.15, -2.165);
+  tallHandle.material = handleMat;
+}
+
+function setMaterial(name) {
+  if (!materials[name]) return;
+  currentMaterial = name;
+  // Update all body+door meshes (skip handles and tall walnut)
+  scene.meshes.forEach((m) => {
+    if (m.name.startsWith("cab-body-") || m.name.startsWith("door-") ||
+        m.name.startsWith("up-body-") || m.name.startsWith("up-door-")) {
+      m.material = materials[name];
+    }
+  });
+  // Highlight active button
+  document.querySelectorAll(".mat-btn").forEach(b => b.classList.remove("active"));
+  event?.currentTarget?.classList.add("active");
+}
+
+function setCamera(preset) {
+  if (!camera) return;
+  const animate = (target, alpha, beta, radius) => {
+    const ease = new BABYLON.CubicEase();
+    ease.setEasingMode(BABYLON.EasingFunction.EASINGMODE_EASEINOUT);
+    BABYLON.Animation.CreateAndStartAnimation("a", camera, "alpha",   60, 30, camera.alpha,  alpha,  0, ease);
+    BABYLON.Animation.CreateAndStartAnimation("b", camera, "beta",    60, 30, camera.beta,   beta,   0, ease);
+    BABYLON.Animation.CreateAndStartAnimation("r", camera, "radius",  60, 30, camera.radius, radius, 0, ease);
+    BABYLON.Animation.CreateAndStartAnimation("t", camera, "target",  60, 30, camera.target, target, 0, ease);
+  };
+  switch (preset) {
+    case "perspective": animate(new BABYLON.Vector3(0, 0.7, 0), -Math.PI / 2.5, Math.PI / 2.6, 8); break;
+    case "top":         animate(new BABYLON.Vector3(0, 0, -1.5), -Math.PI / 2, 0.02, 6); break;
+    case "front":       animate(new BABYLON.Vector3(0, 0.9, -2), -Math.PI / 2, Math.PI / 2.05, 5); break;
+    case "walk":        animate(new BABYLON.Vector3(0, 1.3, 0),   -Math.PI / 2, Math.PI / 2.1, 1.8); break;
+    case "reset":       animate(new BABYLON.Vector3(0, 0.7, 0), -Math.PI / 2.5, Math.PI / 2.6, 8); break;
+  }
+  document.querySelectorAll(".cam-btn").forEach(b => b.classList.remove("active"));
+  event?.currentTarget?.classList.add("active");
+}
+
+// ===== Boot =====
+(async () => {
+  engine = await createEngine();
+  createScene();
+
+  loadingEl.classList.add("hidden");
+  setTimeout(() => loadingEl.remove(), 500);
+
+  engine.runRenderLoop(() => {
+    scene.render();
+  });
+  window.addEventListener("resize", () => engine.resize());
+
+  // FPS counter
+  setInterval(() => {
+    fpsEl.textContent = Math.round(engine.getFps()) + " fps";
+  }, 500);
+})();
+</script>
+</body>
+</html>

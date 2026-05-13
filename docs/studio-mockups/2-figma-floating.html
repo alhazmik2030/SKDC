@@ -1,0 +1,270 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<title>SKDC Studio — Mockup 2: Floating Carousel (Figma style)</title>
+<style>
+  :root {
+    --bg: #050505; --text: #f5f5f7; --muted: rgba(255,255,255,0.55);
+    --border: rgba(255,255,255,0.08); --panel: rgba(10,10,12,0.85);
+    --aurora-1: #a78bfa; --aurora-2: #f0abfc; --aurora-3: #38bdf8;
+    --halo: rgba(167,139,250,0.45);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: "Cairo", system-ui, sans-serif; overflow: hidden; height: 100vh; }
+  body::before { content:""; position:fixed; inset:0; z-index:0;
+    background: radial-gradient(ellipse 70% 50% at 50% 30%, var(--halo), transparent 60%); opacity:.45; }
+
+  .stage { position: fixed; inset: 0; z-index: 1; }
+  .canvas-fullscreen {
+    position: absolute; inset: 0;
+    background: linear-gradient(180deg, #0a0a0e 0%, #050507 100%);
+  }
+  .scene {
+    position: absolute; left: 8%; right: 8%; top: 8%; bottom: 22%;
+    border-radius: 22px;
+    background:
+      linear-gradient(180deg, transparent 0%, transparent 55%, rgba(80,55,30,0.4) 55%, rgba(50,33,18,0.65) 100%),
+      linear-gradient(135deg, #ece4d4 0%, #dbd0b8 100%);
+    overflow: hidden;
+    box-shadow: inset 0 0 0 1px var(--border), 0 40px 90px -20px rgba(0,0,0,0.7);
+  }
+  .scene::before { content:""; position:absolute; inset:0;
+    background:
+      repeating-linear-gradient(0deg, rgba(0,0,0,.05) 0 1px, transparent 1px 36px),
+      repeating-linear-gradient(90deg, rgba(0,0,0,.05) 0 1px, transparent 1px 36px);
+    transform: perspective(800px) rotateX(60deg);
+    transform-origin: 50% 100%;
+    background-position: 50% 70%;
+  }
+  .cab { position:absolute; bottom:22%;
+    background: linear-gradient(180deg, #d8b58c 0%, #b89460 100%);
+    border-radius:4px;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.2), inset 0 -1px 0 rgba(0,0,0,.25), 0 4px 14px rgba(0,0,0,.45);
+  }
+  .cab::after { content:""; position:absolute; left:50%; bottom:18%; width:36%; height:3px;
+    transform:translateX(-50%); background:rgba(110,80,40,.7); border-radius:2px; }
+  .up { background: linear-gradient(180deg, #ebc99e 0%, #d6ae71 100%); }
+  .tl { background: linear-gradient(180deg, #7c5b3a 0%, #5a4025 100%); }
+  .island { background: linear-gradient(180deg, #c79f73 0%, #a37e50 100%); }
+  .island::before { content:""; position:absolute; top:-6px; left:0; right:0; height:6px;
+    background: linear-gradient(180deg, #eee9e1, #d4cdc0);
+    border-radius: 3px 3px 0 0;
+  }
+
+  /* Top exit + share — minimal */
+  .top-bar {
+    position: absolute; top: 16px; left: 16px; right: 16px;
+    display: flex; justify-content: space-between; align-items: center;
+    z-index: 10;
+  }
+  .exit-btn {
+    background: rgba(244,63,94,0.15); border:1px solid rgba(244,63,94,0.4);
+    color:#fda4af; padding: 9px 16px; border-radius:12px; cursor:pointer; font-weight:600;
+    backdrop-filter: blur(20px);
+  }
+  .top-actions { display:flex; gap:8px; }
+  .top-btn {
+    background: rgba(10,10,12,0.7); border:1px solid var(--border);
+    color: var(--text); padding: 9px 14px; border-radius:12px; cursor:pointer;
+    backdrop-filter: blur(20px);
+  }
+  .top-btn.primary {
+    background: linear-gradient(135deg, #fff, #f1f1f1); color:#050505; font-weight:700;
+  }
+
+  /* Title overlay */
+  .title-overlay {
+    position: absolute; top: 16px; left: 50%; transform: translateX(-50%);
+    background: rgba(10,10,12,0.75); backdrop-filter: blur(20px);
+    border: 1px solid var(--border);
+    padding: 8px 18px; border-radius: 14px;
+    font-size: 13px; color: var(--text);
+    z-index: 9;
+  }
+  .title-overlay .meta { color: var(--muted); margin-right: 8px; font-size: 11px; }
+
+  /* Floating carousel (bottom) */
+  .carousel {
+    position: absolute; bottom: 28px; left: 50%; transform: translateX(-50%);
+    background: rgba(10,10,12,0.88); backdrop-filter: blur(28px);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    padding: 10px 14px;
+    box-shadow: 0 30px 70px -20px rgba(0,0,0,0.75), 0 0 0 1px rgba(255,255,255,.04);
+    display: flex; align-items: center; gap: 8px;
+    z-index: 10;
+  }
+  .cat-icon {
+    width: 56px; height: 56px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 2px;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+  }
+  .cat-icon:hover { background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.18); transform: translateY(-2px); }
+  .cat-icon.active {
+    background: linear-gradient(135deg, var(--aurora-1), var(--aurora-2));
+    border-color: transparent;
+    box-shadow: 0 14px 30px -10px var(--halo);
+    color: white;
+  }
+  .cat-icon svg { width: 22px; height: 22px; color: currentColor; }
+  .cat-icon .lbl { font-size: 9px; opacity: 0.8; }
+  .cat-icon .badge {
+    position: absolute; top: -4px; right: -4px;
+    background: var(--aurora-2); color: #050505;
+    font-size: 9px; font-weight: 700;
+    padding: 2px 5px; border-radius: 7px;
+  }
+  .sep { width:1px; height:36px; background: var(--border); margin: 0 4px; }
+  .tool-btn {
+    width: 44px; height: 56px;
+    background: transparent; border: 0;
+    color: var(--muted); cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    border-radius: 10px;
+  }
+  .tool-btn:hover { background: rgba(255,255,255,.06); color: var(--text); }
+
+  /* Right Inspector (only shown when unit selected) */
+  .inspector {
+    position: absolute; top: 70px; right: 16px;
+    width: 260px;
+    background: rgba(10,10,12,0.88); backdrop-filter: blur(24px);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 14px;
+    box-shadow: 0 30px 70px -20px rgba(0,0,0,0.7);
+    z-index: 9;
+  }
+  .inspector h3 { font-size: 13px; margin-bottom: 10px; display: flex; gap: 6px; align-items: center; }
+  .inspector h3 .dot { width:8px; height:8px; border-radius:50%; background:var(--aurora-1); box-shadow: 0 0 8px var(--aurora-1); }
+  .row { display:flex; justify-content:space-between; padding:7px 0; font-size:12px; border-bottom: 1px solid rgba(255,255,255,0.04); }
+  .row .k { color: var(--muted); }
+  .row .v { font-family: monospace; }
+  .swatches { display:flex; gap:4px; margin-top:8px; }
+  .swatch { width:24px; height:24px; border-radius:6px; cursor:pointer; border: 2px solid transparent; }
+  .swatch.sel { border-color: white; }
+
+  /* Time-of-day strip */
+  .time-strip {
+    position: absolute; left: 50%; transform: translateX(-50%); top: 70px;
+    background: rgba(10,10,12,0.85); backdrop-filter: blur(20px);
+    border: 1px solid var(--border);
+    padding: 6px; border-radius: 14px;
+    display: flex; gap: 4px;
+    z-index: 8;
+  }
+  .time-btn {
+    padding: 6px 12px; border-radius: 9px; border:0; cursor:pointer;
+    background: transparent; color: var(--muted); font-size: 11px;
+  }
+  .time-btn.active { background: var(--aurora-1); color: white; }
+  .time-btn:hover:not(.active) { color: var(--text); background: rgba(255,255,255,0.05); }
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="canvas-fullscreen">
+    <div class="scene">
+      <div class="cab" style="left:5%; width:14%; height:30%;"></div>
+      <div class="cab" style="left:20%; width:14%; height:30%;"></div>
+      <div class="cab tl" style="left:35%; width:9%; height:55%;"></div>
+      <div class="cab tl" style="left:45%; width:9%; height:55%;"></div>
+      <div class="cab" style="left:55%; width:14%; height:30%;"></div>
+      <div class="cab" style="left:70%; width:14%; height:30%;"></div>
+      <div class="cab up" style="left:5%; bottom:62%; width:14%; height:14%;"></div>
+      <div class="cab up" style="left:20%; bottom:62%; width:14%; height:14%;"></div>
+      <div class="cab up" style="left:55%; bottom:62%; width:14%; height:14%;"></div>
+      <div class="cab up" style="left:70%; bottom:62%; width:14%; height:14%;"></div>
+      <div class="cab island" style="left:38%; bottom:8%; width:22%; height:12%;"></div>
+    </div>
+  </div>
+
+  <div class="top-bar">
+    <button class="exit-btn">✕ خروج</button>
+    <div class="top-actions">
+      <button class="top-btn">📷 لقطة</button>
+      <button class="top-btn">↗️ مشاركة</button>
+      <button class="top-btn primary">🎬 Photoreal</button>
+    </div>
+  </div>
+
+  <div class="title-overlay">
+    مطبخ فيلا الراجحي
+    <span class="meta">U-Shape • 17 وحدة • 6.0 × 4.5 م</span>
+  </div>
+
+  <div class="time-strip">
+    <button class="time-btn">🌅 صباح</button>
+    <button class="time-btn active">☀️ ظهر</button>
+    <button class="time-btn">🌇 مغرب</button>
+    <button class="time-btn">🌙 ليل</button>
+  </div>
+
+  <div class="inspector">
+    <h3><span class="dot"></span> وحدة سفلية درجين</h3>
+    <div class="row"><span class="k">العرض</span><span class="v">600 مم</span></div>
+    <div class="row"><span class="k">العمق</span><span class="v">580 مم</span></div>
+    <div class="row"><span class="k">الارتفاع</span><span class="v">720 مم</span></div>
+    <div class="row"><span class="k">التدوير</span><span class="v">0°</span></div>
+    <div class="row"><span class="k">الموقع X</span><span class="v">1,200 مم</span></div>
+    <div class="row"><span class="k">الموقع Y</span><span class="v">0 مم</span></div>
+    <div style="margin-top:10px; font-size:11px; color:var(--muted);">الخامة + اللون</div>
+    <div class="swatches">
+      <div class="swatch sel" style="background:#b7935d"></div>
+      <div class="swatch" style="background:#5a3f24"></div>
+      <div class="swatch" style="background:#eee9e1"></div>
+      <div class="swatch" style="background:#1c1c1c"></div>
+      <div class="swatch" style="background:#c8a9d4"></div>
+      <div class="swatch" style="background:#a0c4b8"></div>
+    </div>
+  </div>
+
+  <div class="carousel">
+    <div class="cat-icon active">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="12" width="18" height="9"/><line x1="9" y1="14" x2="9" y2="19"/></svg>
+      <span class="lbl">سفلية</span>
+      <span class="badge">8</span>
+    </div>
+    <div class="cat-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="7"/></svg>
+      <span class="lbl">علوية</span>
+      <span class="badge">6</span>
+    </div>
+    <div class="cat-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 21V3h18"/></svg>
+      <span class="lbl">أركان</span>
+    </div>
+    <div class="cat-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="6" y="2" width="12" height="20"/></svg>
+      <span class="lbl">دواليب</span>
+    </div>
+    <div class="cat-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="12" cy="12" r="4"/></svg>
+      <span class="lbl">أجهزة</span>
+      <span class="badge">8</span>
+    </div>
+    <div class="cat-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 12h18v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-6z"/></svg>
+      <span class="lbl">مغاسل</span>
+    </div>
+    <div class="cat-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polygon points="12 2 2 7 12 12 22 7 12 2"/></svg>
+      <span class="lbl">خامات</span>
+    </div>
+    <div class="sep"></div>
+    <button class="tool-btn" title="منظور">📐</button>
+    <button class="tool-btn" title="مشي">🚶</button>
+    <button class="tool-btn" title="إعادة">↺</button>
+    <button class="tool-btn" title="AI">✨</button>
+    <button class="tool-btn" title="MCP">🤖</button>
+  </div>
+</div>
+</body>
+</html>

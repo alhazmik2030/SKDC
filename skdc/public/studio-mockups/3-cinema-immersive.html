@@ -1,0 +1,212 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<title>SKDC Studio — Mockup 3: Cinema Showroom (Immersive)</title>
+<style>
+  :root {
+    --bg: #030305; --text: #f5f5f7; --muted: rgba(255,255,255,0.55);
+    --border: rgba(255,255,255,0.08);
+    --aurora-1: #a78bfa; --aurora-2: #f0abfc; --aurora-3: #38bdf8;
+    --halo: rgba(167,139,250,0.5);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: "Cairo", system-ui, sans-serif; overflow: hidden; height: 100vh; }
+  .stage { position: fixed; inset: 0; }
+  .scene-full {
+    position: absolute; inset: 0;
+    background:
+      radial-gradient(ellipse 60% 40% at 50% 40%, rgba(255,210,140,0.18), transparent 60%),
+      linear-gradient(180deg, #0d0d10 0%, #050506 100%);
+  }
+  .scene-full::before {
+    content:""; position:absolute; inset:0;
+    background:
+      linear-gradient(180deg, transparent 60%, rgba(70,45,22,0.45) 60%, rgba(40,25,12,0.7) 100%);
+  }
+  .scene-full::after {
+    content:""; position:absolute; inset:0;
+    background:
+      repeating-linear-gradient(0deg, rgba(0,0,0,.06) 0 1px, transparent 1px 50px),
+      repeating-linear-gradient(90deg, rgba(0,0,0,.06) 0 1px, transparent 1px 50px);
+    transform: perspective(1100px) rotateX(62deg);
+    transform-origin: 50% 100%;
+    background-position: 50% 78%;
+  }
+
+  /* Sun god rays from window */
+  .sun-rays {
+    position: absolute; top: 8%; right: 12%; width: 30%; height: 50%;
+    background: radial-gradient(ellipse 50% 80% at 100% 50%, rgba(255,228,170,0.35), transparent 70%);
+    pointer-events: none;
+  }
+  .window {
+    position: absolute; top: 12%; right: 14%; width: 18%; height: 28%;
+    background: linear-gradient(135deg, rgba(255,228,170,0.4), rgba(255,210,140,0.6));
+    border: 12px solid rgba(20,20,20,0.85);
+    border-radius: 4px;
+    box-shadow: 0 0 60px 10px rgba(255,210,140,0.2);
+  }
+
+  .cabinets-3d {
+    position: absolute; inset: 18% 8% 18% 8%;
+  }
+  .cab { position:absolute; bottom:0;
+    background: linear-gradient(180deg, #ddb88e 0%, #b08755 100%);
+    border-radius:3px;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.25), inset 0 -1px 0 rgba(0,0,0,.3), 0 6px 20px rgba(0,0,0,.55);
+  }
+  .cab::after { content:""; position:absolute; left:50%; bottom:18%; width:32%; height:3px;
+    transform:translateX(-50%); background:rgba(80,55,25,.8); border-radius:2px; }
+  .tl { background: linear-gradient(180deg, #835f3b 0%, #533c25 100%); height:90%; }
+  .up { background: linear-gradient(180deg, #f0cea2 0%, #d6b078 100%); top: 5%; bottom: auto; }
+  .island {
+    background: linear-gradient(180deg, #b08e64 0%, #876a45 100%);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.25), 0 12px 30px rgba(0,0,0,.6);
+  }
+  .island::before {
+    content:""; position:absolute; top:-8px; left:-2px; right:-2px; height:8px;
+    background: linear-gradient(180deg, #f0eee5 0%, #d4d0c5 100%);
+    border-radius: 4px 4px 0 0;
+  }
+
+  /* Hover-reveal HUD elements */
+  .hud-top {
+    position: absolute; top: 0; left: 0; right: 0; height: 80px;
+    display: flex; align-items: flex-start; justify-content: space-between;
+    padding: 16px 24px;
+    background: linear-gradient(180deg, rgba(0,0,0,0.65), transparent);
+    opacity: 0;
+    transition: opacity 0.3s;
+    z-index: 10;
+  }
+  .stage:hover .hud-top { opacity: 1; }
+
+  .exit {
+    background: rgba(244,63,94,0.18); border: 1px solid rgba(244,63,94,0.45);
+    color: #fda4af; padding: 10px 18px; border-radius: 12px; cursor:pointer;
+    font-weight: 600; backdrop-filter: blur(20px);
+  }
+  .top-actions { display: flex; gap: 8px; }
+  .top-btn {
+    background: rgba(10,10,15,0.6); border: 1px solid var(--border);
+    color: var(--text); padding: 10px 16px; border-radius: 12px; cursor:pointer;
+    backdrop-filter: blur(20px); font-size: 13px;
+  }
+  .top-btn.primary {
+    background: linear-gradient(135deg, var(--aurora-1), var(--aurora-2));
+    color: white; font-weight: 700; border-color: transparent;
+  }
+
+  /* Title — always visible but discreet */
+  .title-discrete {
+    position: absolute; top: 20px; left: 50%; transform: translateX(-50%);
+    background: rgba(0,0,0,0.4); backdrop-filter: blur(16px);
+    padding: 8px 16px; border-radius: 100px;
+    font-size: 12px;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    z-index: 9;
+  }
+
+  /* Left edge sidebar — reveal on left edge hover */
+  .edge-zone-left {
+    position: absolute; top: 0; right: 0; width: 50px; height: 100%;
+    z-index: 11;
+  }
+  .side-icons {
+    position: absolute; top: 50%; right: 16px; transform: translateY(-50%) translateX(20px);
+    display: flex; flex-direction: column; gap: 8px;
+    opacity: 0;
+    transition: all 0.3s;
+    z-index: 12;
+  }
+  .edge-zone-left:hover ~ .side-icons,
+  .side-icons:hover { opacity: 1; transform: translateY(-50%) translateX(0); }
+  .side-icons .icon {
+    width: 52px; height: 52px;
+    background: rgba(10,10,15,0.88); backdrop-filter: blur(20px);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; color: var(--muted);
+  }
+  .side-icons .icon:hover {
+    background: linear-gradient(135deg, var(--aurora-1), var(--aurora-2));
+    color: white;
+    transform: translateX(-3px);
+  }
+
+  /* Bottom — keyboard hint */
+  .keys-hint {
+    position: absolute; bottom: 16px; left: 50%; transform: translateX(-50%);
+    background: rgba(0,0,0,0.5); backdrop-filter: blur(20px);
+    border: 1px solid var(--border);
+    padding: 8px 16px; border-radius: 100px;
+    font-size: 11px; color: var(--muted);
+    display: flex; gap: 14px;
+    z-index: 9;
+  }
+  .keys-hint kbd {
+    background: rgba(255,255,255,0.08);
+    padding: 2px 6px; border-radius: 4px;
+    border: 1px solid var(--border);
+    font-family: monospace; font-size: 10px;
+  }
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="scene-full">
+    <div class="sun-rays"></div>
+    <div class="window"></div>
+
+    <div class="cabinets-3d">
+      <div class="cab tl" style="right:4%; width:8%;"></div>
+      <div class="cab tl" style="right:14%; width:8%;"></div>
+      <div class="cab" style="right:24%; width:13%; height:38%;"></div>
+      <div class="cab" style="right:38%; width:13%; height:38%;"></div>
+      <div class="cab" style="right:52%; width:13%; height:38%;"></div>
+      <div class="cab" style="right:66%; width:13%; height:38%;"></div>
+      <div class="cab" style="right:80%; width:13%; height:38%;"></div>
+      <div class="cab up" style="right:24%; width:13%; height:18%;"></div>
+      <div class="cab up" style="right:38%; width:13%; height:18%;"></div>
+      <div class="cab up" style="right:66%; width:13%; height:18%;"></div>
+      <div class="cab up" style="right:80%; width:13%; height:18%;"></div>
+      <div class="cab island" style="left:30%; bottom:0; width:35%; height:24%;"></div>
+    </div>
+  </div>
+
+  <div class="hud-top">
+    <button class="exit">✕ خروج من الاستديو</button>
+    <div class="top-actions">
+      <button class="top-btn">📷 لقطة</button>
+      <button class="top-btn">↗️ مشاركة WhatsApp</button>
+      <button class="top-btn primary">🎬 Photoreal Render</button>
+    </div>
+  </div>
+
+  <div class="title-discrete">مطبخ فيلا الراجحي · 17 وحدة</div>
+
+  <div class="edge-zone-left"></div>
+  <div class="side-icons">
+    <div class="icon" title="سفلية">📦</div>
+    <div class="icon" title="علوية">📊</div>
+    <div class="icon" title="أركان">🔲</div>
+    <div class="icon" title="دواليب">🚪</div>
+    <div class="icon" title="أجهزة">🔌</div>
+    <div class="icon" title="مغاسل">🚰</div>
+    <div class="icon" title="خامات">🎨</div>
+    <div class="icon" title="إضاءة">💡</div>
+  </div>
+
+  <div class="keys-hint">
+    <span><kbd>ESC</kbd> خروج</span>
+    <span><kbd>R</kbd> إعادة الكاميرا</span>
+    <span><kbd>T</kbd> من فوق</span>
+    <span><kbd>W</kbd> مشي</span>
+    <span><kbd>Space</kbd> دوران تلقائي</span>
+  </div>
+</div>
+</body>
+</html>
