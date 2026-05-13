@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Suspense, useState } from "react";
+import { Suspense, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
@@ -12,16 +12,7 @@ import { toast } from "sonner";
 import { ArrowLeft, Loader2, Mail, Sparkles, Lock, Eye, EyeOff } from "lucide-react";
 
 import { Magnetic } from "@/components/effects/magnetic";
-
-const schema = z.object({
-  email: z
-    .string()
-    .min(1, "البريد الإلكتروني مطلوب")
-    .email("صيغة البريد الإلكتروني غير صحيحة"),
-  password: z.string().min(1, "كلمة المرور مطلوبة"),
-});
-
-type FormValues = z.infer<typeof schema>;
+import { useI18n } from "@/components/i18n-provider";
 
 export default function SignInPage() {
   return (
@@ -32,6 +23,7 @@ export default function SignInPage() {
 }
 
 function SignInForm() {
+  const { t } = useI18n();
   const router = useRouter();
   const search = useSearchParams();
   const callbackUrl = search.get("from") || "/dashboard";
@@ -39,6 +31,20 @@ function SignInForm() {
   const [submitting, setSubmitting] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+
+  const schema = useMemo(
+    () =>
+      z.object({
+        email: z
+          .string()
+          .min(1, t("auth.errors.emailRequired"))
+          .email(t("auth.errors.emailInvalid")),
+        password: z.string().min(1, t("auth.errors.passwordRequired")),
+      }),
+    [t],
+  );
+
+  type FormValues = z.infer<typeof schema>;
 
   const {
     register,
@@ -59,13 +65,13 @@ function SignInForm() {
         callbackUrl,
       });
       if (res?.error) {
-        toast.error("بريد أو كلمة مرور غير صحيحة");
+        toast.error(t("auth.signIn.invalidCredentials"));
       } else if (res?.ok) {
-        toast.success("مرحباً بعودتك");
+        toast.success(t("auth.signIn.welcomeBack"));
         router.push(callbackUrl);
       }
     } catch {
-      toast.error("حدث خطأ غير متوقع.");
+      toast.error(t("common.unexpectedError"));
     } finally {
       setSubmitting(false);
     }
@@ -77,7 +83,7 @@ function SignInForm() {
       await signIn("google", { callbackUrl });
     } catch {
       setGoogleLoading(false);
-      toast.error("تعذّر بدء تسجيل الدخول بـ Google");
+      toast.error(t("auth.signIn.errorGoogle"));
     }
   }
 
@@ -108,13 +114,13 @@ function SignInForm() {
           >
             <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-violet-400/30 bg-violet-500/10 px-3 py-1 text-xs text-violet-200 backdrop-blur-md">
               <Sparkles className="h-3 w-3" />
-              مرحباً بعودتك
+              {t("auth.signIn.tagline")}
             </div>
             <h1 className="text-4xl font-black leading-tight tracking-tight md:text-5xl">
-              <span className="text-gradient-aurora">سجّل دخولك</span>
+              <span className="text-gradient-aurora">{t("auth.signIn.title")}</span>
             </h1>
             <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-              أدخل بريدك وكلمة المرور لمتابعة عملك.
+              {t("auth.signIn.subtitle")}
             </p>
           </motion.div>
 
@@ -133,13 +139,13 @@ function SignInForm() {
             ) : (
               <GoogleIcon className="h-5 w-5" />
             )}
-            متابعة باستخدام Google
+            {t("auth.continueGoogle")}
           </motion.button>
 
           {/* Divider */}
           <div className="my-6 flex items-center gap-3">
             <div className="h-px flex-1 bg-gradient-to-r from-transparent via-white/10 to-transparent" />
-            <span className="text-xs text-muted-foreground">أو بكلمة المرور</span>
+            <span className="text-xs text-muted-foreground">{t("auth.signIn.orPassword")}</span>
             <div className="h-px flex-1 bg-gradient-to-r from-transparent via-white/10 to-transparent" />
           </div>
 
@@ -153,7 +159,7 @@ function SignInForm() {
           >
             <div className="space-y-2">
               <label htmlFor="email" className="block text-xs font-medium text-muted-foreground">
-                البريد الإلكتروني
+                {t("auth.signIn.emailLabel")}
               </label>
               <div className="relative">
                 <Mail className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -162,7 +168,7 @@ function SignInForm() {
                   type="email"
                   dir="ltr"
                   autoComplete="email"
-                  placeholder="you@example.com"
+                  placeholder={t("auth.signIn.emailPlaceholder")}
                   className="h-12 w-full rounded-xl border border-white/10 bg-white/[0.03] px-4 pr-10 text-base text-foreground placeholder:text-muted-foreground/60 outline-none transition-colors focus:border-violet-400/50 focus:bg-white/[0.05] focus:ring-2 focus:ring-violet-400/20"
                   {...register("email")}
                 />
@@ -172,7 +178,7 @@ function SignInForm() {
 
             <div className="space-y-2">
               <label htmlFor="password" className="block text-xs font-medium text-muted-foreground">
-                كلمة المرور
+                {t("auth.signIn.passwordLabel")}
               </label>
               <div className="relative">
                 <Lock className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -181,7 +187,7 @@ function SignInForm() {
                   type={showPassword ? "text" : "password"}
                   dir="ltr"
                   autoComplete="current-password"
-                  placeholder="••••••••"
+                  placeholder={t("auth.signIn.passwordPlaceholder")}
                   className="h-12 w-full rounded-xl border border-white/10 bg-white/[0.03] px-4 pl-10 pr-10 text-base text-foreground placeholder:text-muted-foreground/60 outline-none transition-colors focus:border-violet-400/50 focus:bg-white/[0.05] focus:ring-2 focus:ring-violet-400/20"
                   {...register("password")}
                 />
@@ -189,7 +195,7 @@ function SignInForm() {
                   type="button"
                   onClick={() => setShowPassword((v) => !v)}
                   className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                  aria-label={showPassword ? "إخفاء" : "إظهار"}
+                  aria-label={showPassword ? t("auth.signIn.passwordHide") : t("auth.signIn.passwordShow")}
                 >
                   {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
@@ -208,11 +214,11 @@ function SignInForm() {
                 {submitting ? (
                   <>
                     <Loader2 className="h-4 w-4 animate-spin" />
-                    جارٍ الدخول…
+                    {t("auth.signIn.submitting")}
                   </>
                 ) : (
                   <>
-                    تسجيل الدخول
+                    {t("auth.signIn.submit")}
                     <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-1" />
                   </>
                 )}
@@ -226,12 +232,12 @@ function SignInForm() {
             transition={{ duration: 0.5, delay: 0.5 }}
             className="mt-8 text-center text-sm text-muted-foreground"
           >
-            ليس لديك حساب؟{" "}
+            {t("auth.signIn.noAccount")}{" "}
             <Link
               href="/sign-up"
               className="font-semibold text-foreground transition-colors hover:text-violet-300"
             >
-              أنشئ حساباً جديداً
+              {t("auth.signIn.signUpLink")}
             </Link>
           </motion.p>
         </div>

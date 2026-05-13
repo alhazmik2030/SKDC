@@ -7,7 +7,7 @@ import {
   TabsTrigger,
 } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { MachineFormDialog } from "@/components/machines/machine-form-dialog";
+import { MachineFormDialogLazy as MachineFormDialog } from "@/components/machines/machine-form-dialog-lazy";
 import { MachinesList } from "@/components/machines/machines-list";
 import { ApiTokensCard } from "@/components/api/api-tokens-card";
 import { T } from "@/components/i18n-text";

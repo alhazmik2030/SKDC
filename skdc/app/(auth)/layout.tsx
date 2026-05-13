@@ -18,9 +18,9 @@ export default function AuthLayout({
           className="glass flex items-center gap-2 rounded-full px-4 py-2 text-sm font-bold tracking-wide transition-colors hover:bg-white/10"
         >
           <div className="relative h-6 w-6">
-            <div className="absolute inset-0 rounded-md bg-gradient-to-br from-violet-400 via-fuchsia-400 to-sky-400" />
+            <div className="absolute inset-0 rounded-md bg-gradient-to-br from-[var(--theme-stop-1,#a78bfa)] via-[var(--theme-stop-2,#f0abfc)] to-[var(--theme-stop-3,#38bdf8)]" />
             <div className="absolute inset-[2px] rounded-[5px] bg-background" />
-            <div className="absolute inset-[5px] rounded-sm bg-gradient-to-br from-violet-400 to-sky-400" />
+            <div className="absolute inset-[5px] rounded-sm bg-gradient-to-br from-[var(--theme-stop-1,#a78bfa)] to-[var(--theme-stop-3,#38bdf8)]" />
           </div>
           SKDC
         </Link>

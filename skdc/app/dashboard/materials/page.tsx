@@ -1,5 +1,5 @@
 import { PageHeader } from "@/components/dashboard/page-header";
-import { MaterialFormDialog } from "@/components/materials/material-form-dialog";
+import { MaterialFormDialogLazy as MaterialFormDialog } from "@/components/materials/material-form-dialog-lazy";
 import { MaterialsList } from "@/components/materials/materials-list";
 import { listMaterials } from "@/lib/actions/materials";
 

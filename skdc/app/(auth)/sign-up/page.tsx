@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
@@ -22,26 +22,35 @@ import {
 
 import { Magnetic } from "@/components/effects/magnetic";
 import { registerUser } from "@/lib/actions/register";
-
-const schema = z
-  .object({
-    name: z.string().min(2, "الاسم قصير جداً").max(60, "الاسم طويل جداً"),
-    email: z.string().email("صيغة البريد غير صحيحة").toLowerCase(),
-    password: z.string().min(8, "كلمة المرور لازم 8 أحرف على الأقل"),
-    confirm: z.string(),
-  })
-  .refine((v) => v.password === v.confirm, {
-    message: "كلمات المرور غير متطابقة",
-    path: ["confirm"],
-  });
-
-type FormValues = z.infer<typeof schema>;
+import { useI18n } from "@/components/i18n-provider";
 
 export default function SignUpPage() {
+  const { t } = useI18n();
   const router = useRouter();
   const [submitting, setSubmitting] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [showPwd, setShowPwd] = useState(false);
+
+  const schema = useMemo(
+    () =>
+      z
+        .object({
+          name: z
+            .string()
+            .min(2, t("auth.errors.nameShort"))
+            .max(60, t("auth.errors.nameLong")),
+          email: z.string().email(t("auth.errors.emailInvalid")).toLowerCase(),
+          password: z.string().min(8, t("auth.errors.passwordShort")),
+          confirm: z.string(),
+        })
+        .refine((v) => v.password === v.confirm, {
+          message: t("auth.errors.passwordMismatch"),
+          path: ["confirm"],
+        }),
+    [t],
+  );
+
+  type FormValues = z.infer<typeof schema>;
 
   const {
     register,
@@ -76,14 +85,14 @@ export default function SignUpPage() {
         callbackUrl: "/dashboard",
       });
       if (res?.ok) {
-        toast.success("تم إنشاء حسابك");
+        toast.success(t("auth.signUp.successCreated"));
         router.push("/dashboard");
       } else {
-        toast.success("تم التسجيل — سجّل دخولك الآن");
+        toast.success(t("auth.signUp.successRegistered"));
         router.push("/sign-in");
       }
     } catch {
-      toast.error("حدث خطأ غير متوقع");
+      toast.error(t("common.unexpectedError"));
     } finally {
       setSubmitting(false);
     }
@@ -95,7 +104,7 @@ export default function SignUpPage() {
       await signIn("google", { callbackUrl: "/dashboard" });
     } catch {
       setGoogleLoading(false);
-      toast.error("تعذّر بدء التسجيل بـ Google");
+      toast.error(t("auth.signUp.errorGoogle"));
     }
   }
 
@@ -126,13 +135,13 @@ export default function SignUpPage() {
           >
             <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-violet-400/30 bg-violet-500/10 px-3 py-1 text-xs text-violet-200 backdrop-blur-md">
               <Sparkles className="h-3 w-3" />
-              ابدأ مجاناً
+              {t("auth.signUp.tagline")}
             </div>
             <h1 className="text-4xl font-black leading-tight tracking-tight md:text-5xl">
-              <span className="text-gradient-aurora">أنشئ حسابك</span>
+              <span className="text-gradient-aurora">{t("auth.signUp.title")}</span>
             </h1>
             <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-              دقيقة واحدة وتبدأ تصميم مطبخك الأول.
+              {t("auth.signUp.subtitle")}
             </p>
           </motion.div>
 
@@ -151,13 +160,13 @@ export default function SignUpPage() {
             ) : (
               <GoogleIcon className="h-5 w-5" />
             )}
-            متابعة باستخدام Google
+            {t("auth.continueGoogle")}
           </motion.button>
 
           {/* Divider */}
           <div className="my-6 flex items-center gap-3">
             <div className="h-px flex-1 bg-gradient-to-r from-transparent via-white/10 to-transparent" />
-            <span className="text-xs text-muted-foreground">أو بالبريد</span>
+            <span className="text-xs text-muted-foreground">{t("auth.signUp.orEmail")}</span>
             <div className="h-px flex-1 bg-gradient-to-r from-transparent via-white/10 to-transparent" />
           </div>
 
@@ -170,21 +179,21 @@ export default function SignUpPage() {
             className="space-y-4"
           >
             <Field
-              label="الاسم"
+              label={t("auth.signUp.nameLabel")}
               icon={User}
               error={errors.name?.message}
               registration={register("name")}
-              placeholder="خالد الحازمي"
+              placeholder={t("auth.signUp.namePlaceholder")}
               autoComplete="name"
               type="text"
             />
 
             <Field
-              label="البريد الإلكتروني"
+              label={t("auth.signUp.emailLabel")}
               icon={Mail}
               error={errors.email?.message}
               registration={register("email")}
-              placeholder="you@example.com"
+              placeholder={t("auth.signUp.emailPlaceholder")}
               autoComplete="email"
               type="email"
               dir="ltr"
@@ -192,7 +201,7 @@ export default function SignUpPage() {
 
             <div className="space-y-2">
               <label className="block text-xs font-medium text-muted-foreground">
-                كلمة المرور
+                {t("auth.signUp.passwordLabel")}
               </label>
               <div className="relative">
                 <Lock className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -200,7 +209,7 @@ export default function SignUpPage() {
                   type={showPwd ? "text" : "password"}
                   dir="ltr"
                   autoComplete="new-password"
-                  placeholder="8 أحرف على الأقل"
+                  placeholder={t("auth.signUp.passwordHint")}
                   className="h-12 w-full rounded-xl border border-white/10 bg-white/[0.03] px-4 pl-10 pr-10 text-base text-foreground placeholder:text-muted-foreground/60 outline-none transition-colors focus:border-violet-400/50 focus:bg-white/[0.05] focus:ring-2 focus:ring-violet-400/20"
                   {...register("password")}
                 />
@@ -208,6 +217,7 @@ export default function SignUpPage() {
                   type="button"
                   onClick={() => setShowPwd((v) => !v)}
                   className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  aria-label={showPwd ? t("auth.signIn.passwordHide") : t("auth.signIn.passwordShow")}
                 >
                   {showPwd ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
@@ -218,11 +228,11 @@ export default function SignUpPage() {
             </div>
 
             <Field
-              label="تأكيد كلمة المرور"
+              label={t("auth.signUp.passwordConfirm")}
               icon={Lock}
               error={errors.confirm?.message}
               registration={register("confirm")}
-              placeholder="أعد كتابة كلمة المرور"
+              placeholder={t("auth.signUp.passwordConfirmPlaceholder")}
               autoComplete="new-password"
               type={showPwd ? "text" : "password"}
               dir="ltr"
@@ -237,11 +247,11 @@ export default function SignUpPage() {
                 {submitting ? (
                   <>
                     <Loader2 className="h-4 w-4 animate-spin" />
-                    جارٍ إنشاء الحساب…
+                    {t("auth.signUp.submitting")}
                   </>
                 ) : (
                   <>
-                    أنشئ الحساب
+                    {t("auth.signUp.submit")}
                     <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-1" />
                   </>
                 )}
@@ -255,12 +265,12 @@ export default function SignUpPage() {
             transition={{ duration: 0.5, delay: 0.5 }}
             className="mt-8 text-center text-sm text-muted-foreground"
           >
-            عندك حساب؟{" "}
+            {t("auth.signUp.haveAccount")}{" "}
             <Link
               href="/sign-in"
               className="font-semibold text-foreground transition-colors hover:text-violet-300"
             >
-              سجّل دخولك
+              {t("auth.signUp.signInLink")}
             </Link>
           </motion.p>
         </div>
@@ -268,6 +278,10 @@ export default function SignUpPage() {
     </motion.div>
   );
 }
+
+type FieldRegistration = ReturnType<
+  ReturnType<typeof useForm<{ name: string; email: string; password: string; confirm: string }>>["register"]
+>;
 
 function Field({
   label,
@@ -282,7 +296,7 @@ function Field({
   label: string;
   icon: React.ComponentType<{ className?: string }>;
   error?: string;
-  registration: ReturnType<ReturnType<typeof useForm<FormValues>>["register"]>;
+  registration: FieldRegistration;
   placeholder?: string;
   autoComplete?: string;
   type?: string;

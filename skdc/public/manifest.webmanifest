@@ -1,0 +1,28 @@
+{
+  "name": "SKDC — Smart Kitchen Design Cloud",
+  "short_name": "SKDC",
+  "description": "منصة سحابية ذكية لتصميم المطابخ بقوالب جاهزة، توليد فاتورة ومخطط قص تلقائياً، ودعم 3 لغات.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#000000",
+  "theme_color": "#0a0a0a",
+  "lang": "ar",
+  "dir": "rtl",
+  "categories": ["productivity", "business", "design"],
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

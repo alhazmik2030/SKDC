@@ -8,8 +8,10 @@ import type { Customer } from "@prisma/client";
 import { CustomerFormDialog } from "./customer-form-dialog";
 import { EmptyState } from "@/components/dashboard/empty-state";
 import { deleteCustomer } from "@/lib/actions/customers";
+import { useI18n } from "@/components/i18n-provider";
 
 export function CustomersList({ customers }: { customers: Customer[] }) {
+  const { t } = useI18n();
   const [isPending, startTransition] = React.useTransition();
   const [pendingId, setPendingId] = React.useState<string | null>(null);
 
@@ -20,9 +22,9 @@ export function CustomersList({ customers }: { customers: Customer[] }) {
           <div>
             <EmptyState
               icon={Users}
-              title="لا يوجد عملاء بعد"
-              description="ابدأ بإضافة أول عميل لربط مشاريعك به وإصدار الفواتير لاحقاً."
-              ctaLabel="إضافة أول عميل"
+              titleKey="empty.customers.title"
+              descriptionKey="empty.customers.description"
+              ctaLabelKey="empty.customers.cta"
               onCta={() => {}}
             />
           </div>
@@ -32,14 +34,14 @@ export function CustomersList({ customers }: { customers: Customer[] }) {
   }
 
   const onDelete = (id: string, name: string) => {
-    if (!confirm(`هل أنت متأكد من حذف ${name}؟`)) return;
+    if (!confirm(t("common.deleteConfirm").replace("{name}", name))) return;
     setPendingId(id);
     startTransition(async () => {
       try {
         await deleteCustomer(id);
-        toast.success("تم حذف العميل");
+        toast.success(t("toast.customer.deleted"));
       } catch (err) {
-        toast.error((err as Error).message || "فشل الحذف");
+        toast.error((err as Error).message || t("toast.deleteFailed"));
       } finally {
         setPendingId(null);
       }
@@ -81,7 +83,7 @@ export function CustomersList({ customers }: { customers: Customer[] }) {
                 trigger={
                   <button
                     type="button"
-                    aria-label="تعديل"
+                    aria-label={t("a11y.edit")}
                     className="grid h-7 w-7 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-white/5 hover:text-foreground"
                   >
                     <Pencil className="h-3.5 w-3.5" />
@@ -90,7 +92,7 @@ export function CustomersList({ customers }: { customers: Customer[] }) {
               />
               <button
                 type="button"
-                aria-label="حذف"
+                aria-label={t("a11y.delete")}
                 disabled={isPending && pendingId === customer.id}
                 onClick={() => onDelete(customer.id, customer.name)}
                 className="grid h-7 w-7 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-rose-500/10 hover:text-rose-300 disabled:opacity-50"

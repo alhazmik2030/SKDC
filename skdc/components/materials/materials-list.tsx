@@ -8,8 +8,10 @@ import type { Material } from "@prisma/client";
 import { MaterialFormDialog } from "./material-form-dialog";
 import { EmptyState } from "@/components/dashboard/empty-state";
 import { deleteMaterial } from "@/lib/actions/materials";
+import { useI18n } from "@/components/i18n-provider";
 
 export function MaterialsList({ materials }: { materials: Material[] }) {
+  const { t } = useI18n();
   const [isPending, startTransition] = React.useTransition();
   const [pendingId, setPendingId] = React.useState<string | null>(null);
 
@@ -20,9 +22,9 @@ export function MaterialsList({ materials }: { materials: Material[] }) {
           <div>
             <EmptyState
               icon={Layers}
-              title="ابدأ بتخصيص خاماتك"
-              description="أضف خامات ورشتك مع الأسعار والسماكات لتسريع التسعير التلقائي."
-              ctaLabel="إضافة خامة"
+              titleKey="empty.materials.title"
+              descriptionKey="empty.materials.description"
+              ctaLabelKey="empty.materials.cta"
               onCta={() => {}}
             />
           </div>
@@ -32,14 +34,14 @@ export function MaterialsList({ materials }: { materials: Material[] }) {
   }
 
   const onDelete = (id: string, name: string) => {
-    if (!confirm(`هل أنت متأكد من حذف ${name}؟`)) return;
+    if (!confirm(t("common.deleteConfirm").replace("{name}", name))) return;
     setPendingId(id);
     startTransition(async () => {
       try {
         await deleteMaterial(id);
-        toast.success("تم حذف الخامة");
+        toast.success(t("toast.material.deleted"));
       } catch (err) {
-        toast.error((err as Error).message || "فشل الحذف");
+        toast.error((err as Error).message || t("toast.deleteFailed"));
       } finally {
         setPendingId(null);
       }
@@ -86,7 +88,7 @@ export function MaterialsList({ materials }: { materials: Material[] }) {
                 trigger={
                   <button
                     type="button"
-                    aria-label="تعديل"
+                    aria-label={t("a11y.edit")}
                     className="grid h-7 w-7 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-white/5 hover:text-foreground"
                   >
                     <Pencil className="h-3.5 w-3.5" />
@@ -95,7 +97,7 @@ export function MaterialsList({ materials }: { materials: Material[] }) {
               />
               <button
                 type="button"
-                aria-label="حذف"
+                aria-label={t("a11y.delete")}
                 disabled={isPending && pendingId === m.id}
                 onClick={() => onDelete(m.id, m.name)}
                 className="grid h-7 w-7 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-rose-500/10 hover:text-rose-300 disabled:opacity-50"

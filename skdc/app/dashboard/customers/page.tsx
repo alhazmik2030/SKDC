@@ -1,5 +1,5 @@
 import { PageHeader } from "@/components/dashboard/page-header";
-import { CustomerFormDialog } from "@/components/customers/customer-form-dialog";
+import { CustomerFormDialogLazy as CustomerFormDialog } from "@/components/customers/customer-form-dialog-lazy";
 import { CustomersList } from "@/components/customers/customers-list";
 import { listCustomers } from "@/lib/actions/customers";
 

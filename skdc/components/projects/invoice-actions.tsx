@@ -7,6 +7,7 @@ import { motion } from "framer-motion";
 import { Loader2, Receipt, Plus, Trash2, ArrowLeft } from "lucide-react";
 import type { Invoice } from "@prisma/client";
 import { generateInvoiceForProject, deleteInvoice } from "@/lib/actions/invoices";
+import { useI18n } from "@/components/i18n-provider";
 
 export function InvoiceActions({
   projectId,
@@ -15,6 +16,7 @@ export function InvoiceActions({
   projectId: string;
   invoices: Invoice[];
 }) {
+  const { t } = useI18n();
   const [isPending, startTransition] = React.useTransition();
   const [pendingDelete, setPendingDelete] = React.useState<string | null>(null);
 
@@ -22,27 +24,29 @@ export function InvoiceActions({
     startTransition(async () => {
       try {
         const invoice = await generateInvoiceForProject(projectId);
-        toast.success(`تم إصدار الفاتورة ${invoice.number}`);
+        toast.success(
+          t("invoice.toasts.created").replace("{number}", invoice.number),
+        );
       } catch (err) {
         const msg = (err as Error).message;
         if (msg === "DESIGN_HAS_NO_UNITS") {
-          toast.error("أضف وحدات للتصميم أولاً قبل إصدار الفاتورة");
+          toast.error(t("invoice.errors.noUnits"));
         } else {
-          toast.error(msg || "فشل الإصدار");
+          toast.error(msg || t("invoice.toasts.createFailed"));
         }
       }
     });
   };
 
   const onDelete = (id: string, number: string) => {
-    if (!confirm(`حذف الفاتورة ${number}؟`)) return;
+    if (!confirm(t("invoice.confirm.delete").replace("{number}", number))) return;
     setPendingDelete(id);
     startTransition(async () => {
       try {
         await deleteInvoice(id);
-        toast.success("تم الحذف");
+        toast.success(t("invoice.toasts.deleted"));
       } catch (err) {
-        toast.error((err as Error).message || "فشل الحذف");
+        toast.error((err as Error).message || t("toast.deleteFailed"));
       } finally {
         setPendingDelete(null);
       }
@@ -53,9 +57,11 @@ export function InvoiceActions({
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-lg font-bold text-gradient">الفواتير</h3>
+          <h3 className="text-lg font-bold text-gradient">
+            {t("invoice.section.title")}
+          </h3>
           <p className="text-xs text-muted-foreground">
-            إصدار فاتورة تلقائي بناءً على وحدات التصميم + ضريبة 15%.
+            {t("invoice.section.subtitle")}
           </p>
         </div>
         <motion.button
@@ -70,14 +76,16 @@ export function InvoiceActions({
           ) : (
             <Plus className="h-4 w-4" />
           )}
-          إصدار فاتورة جديدة
+          {isPending && !pendingDelete
+            ? t("invoice.actions.autoGenerating")
+            : t("invoice.actions.new")}
         </motion.button>
       </div>
 
       {invoices.length === 0 ? (
         <div className="rounded-xl border border-dashed border-border bg-white/[0.02] px-6 py-8 text-center text-sm text-muted-foreground">
           <Receipt className="mx-auto mb-2 h-8 w-8 opacity-50" />
-          لا توجد فواتير صادرة. صمّم المطبخ ثم اضغط &quot;إصدار فاتورة جديدة&quot;.
+          {t("invoice.empty")}
         </div>
       ) : (
         <div className="space-y-2">
@@ -100,7 +108,8 @@ export function InvoiceActions({
               <div className="flex items-center gap-3">
                 <div className="text-left">
                   <div className="font-mono text-lg font-bold">
-                    {inv.total.toFixed(2)} <span className="text-xs">ر.س</span>
+                    {inv.total.toFixed(2)}{" "}
+                    <span className="text-xs">{t("invoice.currency.sar")}</span>
                   </div>
                   <div className="text-[10px] uppercase tracking-wider text-muted-foreground">
                     {inv.status}
@@ -110,14 +119,14 @@ export function InvoiceActions({
                   href={`/dashboard/invoices/${inv.id}`}
                   className="inline-flex items-center gap-1 rounded-lg bg-white/5 px-3 py-1.5 text-xs hover:bg-white/10"
                 >
-                  عرض / طباعة
+                  {t("invoice.actions.viewPrint")}
                   <ArrowLeft className="h-3 w-3" />
                 </Link>
                 <button
                   type="button"
                   onClick={() => onDelete(inv.id, inv.number)}
                   disabled={pendingDelete === inv.id}
-                  aria-label="حذف"
+                  aria-label={t("a11y.delete")}
                   className="grid h-8 w-8 place-items-center rounded-lg text-muted-foreground hover:bg-rose-500/10 hover:text-rose-300 disabled:opacity-50"
                 >
                   <Trash2 className="h-3.5 w-3.5" />

@@ -20,19 +20,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { createCustomer, updateCustomer } from "@/lib/actions/customers";
-
-const Schema = z.object({
-  name: z.string().min(2, "الاسم مطلوب"),
-  phone: z.string().optional(),
-  email: z
-    .string()
-    .optional()
-    .refine((v) => !v || /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v), "بريد غير صحيح"),
-  address: z.string().optional(),
-  notes: z.string().optional(),
-});
-
-type FormValues = z.infer<typeof Schema>;
+import { useI18n } from "@/components/i18n-provider";
 
 export interface CustomerFormDialogProps {
   customer?: {
@@ -44,12 +32,35 @@ export interface CustomerFormDialogProps {
     notes: string | null;
   };
   trigger?: React.ReactNode;
+  /** When true, dialog mounts already-open. Used by the lazy wrapper. */
+  defaultOpen?: boolean;
 }
 
-export function CustomerFormDialog({ customer, trigger }: CustomerFormDialogProps) {
-  const [open, setOpen] = React.useState(false);
+export function CustomerFormDialog({ customer, trigger, defaultOpen = false }: CustomerFormDialogProps) {
+  const { t } = useI18n();
+  const [open, setOpen] = React.useState(defaultOpen);
   const [isPending, startTransition] = React.useTransition();
   const isEdit = !!customer;
+
+  const Schema = React.useMemo(
+    () =>
+      z.object({
+        name: z.string().min(2, t("form.customer.nameRequired")),
+        phone: z.string().optional(),
+        email: z
+          .string()
+          .optional()
+          .refine(
+            (v) => !v || /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v),
+            t("form.customer.invalidEmail"),
+          ),
+        address: z.string().optional(),
+        notes: z.string().optional(),
+      }),
+    [t],
+  );
+
+  type FormValues = z.infer<typeof Schema>;
 
   const form = useForm<FormValues>({
     resolver: zodResolver(Schema),
@@ -67,15 +78,15 @@ export function CustomerFormDialog({ customer, trigger }: CustomerFormDialogProp
       try {
         if (isEdit && customer) {
           await updateCustomer(customer.id, values);
-          toast.success("تم تحديث العميل");
+          toast.success(t("toast.customer.updated"));
         } else {
           await createCustomer(values);
-          toast.success("تم إضافة العميل");
+          toast.success(t("toast.customer.added"));
           form.reset();
         }
         setOpen(false);
       } catch (err) {
-        toast.error((err as Error).message || "حدث خطأ");
+        toast.error((err as Error).message || t("common.unexpectedError"));
       }
     });
   };
@@ -91,7 +102,7 @@ export function CustomerFormDialog({ customer, trigger }: CustomerFormDialogProp
                 className="inline-flex items-center gap-2 rounded-2xl bg-gradient-to-br from-white to-white/90 px-5 py-2.5 text-sm font-semibold text-background shadow-lg shadow-violet-500/20 transition-transform hover:scale-[1.02]"
               >
                 <UserPlus className="h-4 w-4" />
-                إضافة عميل
+                {t("form.customer.add")}
               </button>
             )}
           </span>
@@ -100,38 +111,64 @@ export function CustomerFormDialog({ customer, trigger }: CustomerFormDialogProp
       <DialogContent className="glass max-w-lg border-0 bg-card/90 backdrop-blur-2xl">
         <DialogHeader>
           <DialogTitle className="text-gradient-aurora text-2xl">
-            {isEdit ? "تعديل عميل" : "إضافة عميل جديد"}
+            {isEdit ? t("form.customer.editTitle") : t("form.customer.addTitle")}
           </DialogTitle>
           <DialogDescription>
-            بيانات العميل تُربط بالمشاريع والفواتير لاحقاً.
+            {t("form.customer.description")}
           </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
           <Field
-            label="الاسم"
+            label={t("form.customer.name")}
             required
             error={form.formState.errors.name?.message}
           >
-            <Input placeholder="مثال: محمد العتيبي" {...form.register("name")} />
+            <Input
+              placeholder={t("form.customer.namePlaceholder")}
+              {...form.register("name")}
+            />
           </Field>
 
           <div className="grid grid-cols-2 gap-3">
-            <Field label="الجوال" error={form.formState.errors.phone?.message}>
-              <Input placeholder="+9665XXXXXXXX" {...form.register("phone")} dir="ltr" />
+            <Field
+              label={t("form.customer.phone")}
+              error={form.formState.errors.phone?.message}
+            >
+              <Input
+                placeholder={t("form.customer.phonePlaceholder")}
+                {...form.register("phone")}
+                dir="ltr"
+              />
             </Field>
-            <Field label="البريد" error={form.formState.errors.email?.message}>
-              <Input placeholder="name@example.com" {...form.register("email")} dir="ltr" />
+            <Field
+              label={t("form.customer.email")}
+              error={form.formState.errors.email?.message}
+            >
+              <Input
+                placeholder={t("form.customer.emailPlaceholder")}
+                {...form.register("email")}
+                dir="ltr"
+              />
             </Field>
           </div>
 
-          <Field label="العنوان" error={form.formState.errors.address?.message}>
-            <Input placeholder="حي / مدينة" {...form.register("address")} />
+          <Field
+            label={t("form.customer.address")}
+            error={form.formState.errors.address?.message}
+          >
+            <Input
+              placeholder={t("form.customer.addressPlaceholder")}
+              {...form.register("address")}
+            />
           </Field>
 
-          <Field label="ملاحظات" error={form.formState.errors.notes?.message}>
+          <Field
+            label={t("common.notes")}
+            error={form.formState.errors.notes?.message}
+          >
             <Textarea
-              placeholder="ملاحظات اختيارية"
+              placeholder={t("form.customer.notesPlaceholder")}
               rows={3}
               {...form.register("notes")}
             />
@@ -144,7 +181,7 @@ export function CustomerFormDialog({ customer, trigger }: CustomerFormDialogProp
               onClick={() => setOpen(false)}
               disabled={isPending}
             >
-              إلغاء
+              {t("common.cancel")}
             </Button>
             <motion.button
               type="submit"
@@ -155,7 +192,7 @@ export function CustomerFormDialog({ customer, trigger }: CustomerFormDialogProp
               {isPending ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
               ) : null}
-              {isEdit ? "حفظ التعديلات" : "إضافة العميل"}
+              {isEdit ? t("common.saveChanges") : t("form.customer.submit")}
             </motion.button>
           </DialogFooter>
         </form>

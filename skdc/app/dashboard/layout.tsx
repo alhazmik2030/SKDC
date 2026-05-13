@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { Sidebar } from "@/components/dashboard/sidebar";
 import { Topbar } from "@/components/dashboard/topbar";
+import { MobileNavProvider } from "@/components/dashboard/mobile-nav-provider";
 
 export default async function DashboardLayout({
   children,
@@ -14,26 +15,28 @@ export default async function DashboardLayout({
   }
 
   return (
-    <div className="relative flex min-h-screen flex-row-reverse bg-background">
-      {/* Subtle ambient — follows the active theme. */}
-      <div
-        aria-hidden
-        className="pointer-events-none fixed inset-0 -z-10"
-        style={{
-          background:
-            "radial-gradient(ellipse 60% 40% at 50% 0%, var(--theme-halo, rgba(167, 139, 250, 0.10)), transparent 70%)",
-          opacity: 0.4,
-        }}
-      />
+    <MobileNavProvider>
+      <div className="relative flex min-h-screen flex-row-reverse bg-background">
+        {/* Subtle ambient — follows the active theme. */}
+        <div
+          aria-hidden
+          className="pointer-events-none fixed inset-0 -z-10"
+          style={{
+            background:
+              "radial-gradient(ellipse 60% 40% at 50% 0%, var(--theme-halo, rgba(167, 139, 250, 0.10)), transparent 70%)",
+            opacity: 0.4,
+          }}
+        />
 
-      <Sidebar />
+        <Sidebar />
 
-      <div className="flex min-h-screen flex-1 flex-col overflow-x-hidden">
-        <Topbar />
-        <main className="flex-1 overflow-x-hidden px-6 py-8 md:px-10 md:py-10">
-          <div className="mx-auto w-full max-w-7xl">{children}</div>
-        </main>
+        <div className="flex min-h-screen flex-1 flex-col overflow-x-hidden">
+          <Topbar />
+          <main className="flex-1 overflow-x-hidden px-4 py-6 sm:px-6 sm:py-8 md:px-10 md:py-10">
+            <div className="mx-auto w-full max-w-7xl">{children}</div>
+          </main>
+        </div>
       </div>
-    </div>
+    </MobileNavProvider>
   );
 }

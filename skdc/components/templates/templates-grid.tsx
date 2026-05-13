@@ -9,40 +9,45 @@ import type { Template, TemplateCategory } from "@prisma/client";
 import { cn } from "@/lib/utils";
 import { Reveal } from "@/components/effects/reveal";
 import { deleteWorkspaceTemplate } from "@/lib/actions/templates";
-
-const FILTERS: { id: TemplateCategory | "ALL"; label: string }[] = [
-  { id: "ALL", label: "الكل" },
-  { id: "LOWER_CABINET", label: "سفلية" },
-  { id: "UPPER_CABINET", label: "علوية" },
-  { id: "CORNER", label: "أركان" },
-  { id: "TALL_CABINET", label: "دواليب" },
-  { id: "APPLIANCE", label: "أجهزة" },
-  { id: "ACCESSORY", label: "إكسسوارات" },
-];
+import { useI18n } from "@/components/i18n-provider";
 
 export function TemplatesGrid({ templates }: { templates: Template[] }) {
+  const { t } = useI18n();
   const [active, setActive] = React.useState<TemplateCategory | "ALL">("ALL");
   const [pendingId, setPendingId] = React.useState<string | null>(null);
   const [, startTransition] = React.useTransition();
 
+  const FILTERS = React.useMemo<{ id: TemplateCategory | "ALL"; label: string }[]>(
+    () => [
+      { id: "ALL", label: t("template.category.ALL") },
+      { id: "LOWER_CABINET", label: t("template.category.LOWER_CABINET") },
+      { id: "UPPER_CABINET", label: t("template.category.UPPER_CABINET") },
+      { id: "CORNER", label: t("template.category.CORNER") },
+      { id: "TALL_CABINET", label: t("template.category.TALL_CABINET") },
+      { id: "APPLIANCE", label: t("template.category.APPLIANCE") },
+      { id: "ACCESSORY", label: t("template.category.ACCESSORY") },
+    ],
+    [t],
+  );
+
   const filtered =
-    active === "ALL" ? templates : templates.filter((t) => t.category === active);
+    active === "ALL" ? templates : templates.filter((tpl) => tpl.category === active);
 
   const counts = React.useMemo(() => {
     const c: Record<string, number> = { ALL: templates.length };
-    for (const t of templates) c[t.category] = (c[t.category] ?? 0) + 1;
+    for (const tpl of templates) c[tpl.category] = (c[tpl.category] ?? 0) + 1;
     return c;
   }, [templates]);
 
   const onDelete = (id: string, name: string) => {
-    if (!confirm(`حذف القالب المخصص "${name}"؟`)) return;
+    if (!confirm(t("common.deleteConfirm").replace("{name}", name))) return;
     setPendingId(id);
     startTransition(async () => {
       try {
         await deleteWorkspaceTemplate(id);
-        toast.success("تم حذف القالب");
+        toast.success(t("toast.template.deleted"));
       } catch (err) {
-        toast.error((err as Error).message || "فشل الحذف");
+        toast.error((err as Error).message || t("toast.deleteFailed"));
       } finally {
         setPendingId(null);
       }
@@ -77,7 +82,7 @@ export function TemplatesGrid({ templates }: { templates: Template[] }) {
 
       {filtered.length === 0 ? (
         <div className="glass rounded-2xl px-8 py-16 text-center text-muted-foreground">
-          لا توجد قوالب في هذه الفئة.
+          {t("empty.templates.category")}
         </div>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
@@ -100,11 +105,11 @@ export function TemplatesGrid({ templates }: { templates: Template[] }) {
                       {isCustom ? (
                         <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/20 px-2 py-0.5 text-[10px] font-bold text-emerald-200 ring-1 ring-emerald-400/30">
                           <Sparkles className="h-3 w-3" />
-                          خاص بك
+                          {t("template.badge.custom")}
                         </span>
                       ) : (
                         <span className="inline-flex items-center gap-1 rounded-full bg-violet-500/20 px-2 py-0.5 text-[10px] font-bold text-violet-200 ring-1 ring-violet-400/30">
-                          افتراضي
+                          {t("template.badge.global")}
                         </span>
                       )}
                     </div>
@@ -112,7 +117,7 @@ export function TemplatesGrid({ templates }: { templates: Template[] }) {
                     {isCustom ? (
                       <button
                         type="button"
-                        aria-label="حذف"
+                        aria-label={t("a11y.delete")}
                         disabled={pendingId === template.id}
                         onClick={() => onDelete(template.id, template.name)}
                         className="absolute bottom-2 right-2 grid h-7 w-7 place-items-center rounded-lg bg-rose-500/10 text-rose-300 opacity-0 backdrop-blur-sm transition-opacity hover:bg-rose-500/20 group-hover:opacity-100 disabled:opacity-50"
@@ -142,7 +147,7 @@ export function TemplatesGrid({ templates }: { templates: Template[] }) {
           className="inline-flex items-center gap-2 rounded-full border border-violet-400/30 bg-violet-500/10 px-5 py-2 text-sm text-violet-200 transition-colors hover:bg-violet-500/20"
         >
           <Plus className="h-4 w-4" />
-          بناء قالب مخصص
+          {t("template.custom.cta")}
         </Link>
       </div>
     </>

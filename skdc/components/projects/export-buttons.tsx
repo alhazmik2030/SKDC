@@ -4,15 +4,26 @@ import * as React from "react";
 import { toast } from "sonner";
 import { Download, FileCode, FileSpreadsheet, FileJson, Loader2 } from "lucide-react";
 import { generateExport } from "@/lib/actions/export";
+import { useI18n } from "@/components/i18n-provider";
 
-const ADAPTERS = [
+type AdapterDef = {
+  id: string;
+  /** i18n key — when set, label is taken from translations. */
+  labelKey?: string;
+  /** Static fallback label (used when labelKey is absent — e.g. brand names). */
+  label?: string;
+  icon: React.ComponentType<{ className?: string }>;
+};
+
+const ADAPTERS: AdapterDef[] = [
   { id: "generic-beamsaw-dxf", label: "DXF (Beam Saw)", icon: FileCode },
   { id: "generic-cnc-gcode", label: "G-Code (CNC)", icon: FileCode },
-  { id: "generic-csv", label: "CSV (جدول قطع)", icon: FileSpreadsheet },
+  { id: "generic-csv", labelKey: "export.format.csv", icon: FileSpreadsheet },
   { id: "generic-json", label: "JSON (API)", icon: FileJson },
 ];
 
 export function ExportButtons({ projectId }: { projectId: string }) {
+  const { t } = useI18n();
   const [pendingId, setPendingId] = React.useState<string | null>(null);
 
   const onExport = async (adapterId: string) => {
@@ -34,9 +45,14 @@ export function ExportButtons({ projectId }: { projectId: string }) {
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
 
-      toast.success(`تم تصدير ${result.totals?.pieceCount ?? 0} قطعة`);
+      toast.success(
+        t("toast.invoice.exported").replace(
+          "{count}",
+          String(result.totals?.pieceCount ?? 0),
+        ),
+      );
     } catch (err) {
-      toast.error((err as Error).message || "فشل التصدير");
+      toast.error((err as Error).message || t("toast.exportFailed"));
     } finally {
       setPendingId(null);
     }
@@ -60,7 +76,9 @@ export function ExportButtons({ projectId }: { projectId: string }) {
             ) : (
               <Icon className="h-4 w-4 text-violet-300" />
             )}
-            <span className="flex-1 text-right">{a.label}</span>
+            <span className="flex-1 text-right">
+              {a.labelKey ? t(a.labelKey) : a.label}
+            </span>
             <Download className="h-3.5 w-3.5 text-muted-foreground transition-transform group-hover:-translate-y-0.5" />
           </button>
         );

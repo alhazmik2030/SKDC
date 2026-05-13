@@ -1,5 +1,5 @@
 import { PageHeader } from "@/components/dashboard/page-header";
-import { ProjectFormDialog } from "@/components/projects/project-form-dialog";
+import { ProjectFormDialogLazy as ProjectFormDialog } from "@/components/projects/project-form-dialog-lazy";
 import { ProjectsList } from "@/components/projects/projects-list";
 import { listProjects } from "@/lib/actions/projects";
 import { listCustomers } from "@/lib/actions/customers";

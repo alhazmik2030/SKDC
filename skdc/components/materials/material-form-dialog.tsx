@@ -27,56 +27,42 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { createMaterial, updateMaterial } from "@/lib/actions/materials";
+import { useI18n } from "@/components/i18n-provider";
 
-const Schema = z.object({
-  name: z.string().min(2, "الاسم مطلوب"),
-  type: z.nativeEnum(MaterialType),
-  color: z.string().optional(),
-  thicknessMm: z.coerce.number().positive("لازم رقم موجب"),
-  pricePerM2: z.coerce.number().nonnegative("لازم رقم 0 أو أكبر"),
-  glassTint: z.string().optional(),
-  glassFinish: z.string().optional(),
-});
+const GLASS_TINT_KEYS = [
+  "clear",
+  "bronze",
+  "smoked",
+  "milky-white",
+  "black",
+  "green",
+  "blue",
+] as const;
 
-type FormValues = z.input<typeof Schema>;
-
-const GLASS_TINTS = [
-  { value: "clear", label: "شفاف" },
-  { value: "bronze", label: "برونزي" },
-  { value: "smoked", label: "رمادي (Smoked)" },
-  { value: "milky-white", label: "أبيض حليبي" },
-  { value: "black", label: "أسود" },
-  { value: "green", label: "أخضر" },
-  { value: "blue", label: "أزرق" },
-];
-
-const GLASS_FINISHES = [
-  { value: "transparent", label: "شفاف عادي" },
-  { value: "frosted", label: "مصنفر (Frosted)" },
-  { value: "reflective", label: "عاكس" },
-  { value: "tempered", label: "مقسّى (Tempered)" },
-  { value: "laminated", label: "Laminated" },
-  { value: "patterned", label: "منقوش (Patterned)" },
-];
+const GLASS_FINISH_KEYS = [
+  "transparent",
+  "frosted",
+  "reflective",
+  "tempered",
+  "laminated",
+  "patterned",
+] as const;
 
 const GLASS_THICKNESSES = [4, 5, 6, 8, 10, 12];
 
-const TYPE_LABELS: Record<MaterialType, string> = {
-  HPL: "HPL",
-  POLYLACK: "POLYLACK",
-  UVLACK: "UVLACK",
-  MELAMIN: "MELAMIN",
-  MDF: "MDF",
-  PLYLACK: "PLYLACK",
-  WOOD: "خشب طبيعي",
-  GLASS: "زجاج",
-  OTHER: "أخرى",
-};
+const MATERIAL_TYPES: MaterialType[] = [
+  "HPL",
+  "POLYLACK",
+  "UVLACK",
+  "MELAMIN",
+  "MDF",
+  "PLYLACK",
+  "WOOD",
+  "GLASS",
+  "OTHER",
+];
 
-export function MaterialFormDialog({
-  material,
-  trigger,
-}: {
+export interface MaterialFormDialogProps {
   material?: {
     id: string;
     name: string;
@@ -88,10 +74,35 @@ export function MaterialFormDialog({
     glassFinish?: string | null;
   };
   trigger?: React.ReactNode;
-}) {
-  const [open, setOpen] = React.useState(false);
+  /** When true, dialog mounts already-open. Used by the lazy wrapper. */
+  defaultOpen?: boolean;
+}
+
+export function MaterialFormDialog({ material, trigger, defaultOpen = false }: MaterialFormDialogProps) {
+  const { t } = useI18n();
+  const [open, setOpen] = React.useState(defaultOpen);
   const [isPending, startTransition] = React.useTransition();
   const isEdit = !!material;
+
+  const Schema = React.useMemo(
+    () =>
+      z.object({
+        name: z.string().min(2, t("form.customer.nameRequired")),
+        type: z.nativeEnum(MaterialType),
+        color: z.string().optional(),
+        thicknessMm: z.coerce.number().positive(t("form.material.errPositive")),
+        pricePerM2: z.coerce.number().nonnegative(t("form.material.errNonNegative")),
+        glassTint: z.string().optional(),
+        glassFinish: z.string().optional(),
+      }),
+    [t],
+  );
+
+  type FormValues = z.input<typeof Schema>;
+
+  const TYPE_LABEL = (key: MaterialType) => t(`material.type.${key}`);
+  const TINT_LABEL = (key: string) => t(`glass.tint.${key}`);
+  const FINISH_LABEL = (key: string) => t(`glass.finish.${key}`);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(Schema),
@@ -124,10 +135,10 @@ export function MaterialFormDialog({
       try {
         if (isEdit && material) {
           await updateMaterial(material.id, values);
-          toast.success("تم تحديث الخامة");
+          toast.success(t("toast.material.updated"));
         } else {
           await createMaterial(values);
-          toast.success("تم إضافة الخامة");
+          toast.success(t("toast.material.added"));
           form.reset({
             name: "",
             type: "HPL",
@@ -138,7 +149,7 @@ export function MaterialFormDialog({
         }
         setOpen(false);
       } catch (err) {
-        toast.error((err as Error).message || "حدث خطأ");
+        toast.error((err as Error).message || t("common.unexpectedError"));
       }
     });
   };
@@ -154,7 +165,7 @@ export function MaterialFormDialog({
                 className="inline-flex items-center gap-2 rounded-2xl bg-gradient-to-br from-white to-white/90 px-5 py-2.5 text-sm font-semibold text-background shadow-lg shadow-violet-500/20 transition-transform hover:scale-[1.02]"
               >
                 <Plus className="h-4 w-4" />
-                إضافة خامة
+                {t("form.material.add")}
               </button>
             )}
           </span>
@@ -163,37 +174,44 @@ export function MaterialFormDialog({
       <DialogContent className="glass max-w-lg border-0 bg-card/90 backdrop-blur-2xl">
         <DialogHeader>
           <DialogTitle className="text-gradient-aurora text-2xl">
-            {isEdit ? "تعديل خامة" : "إضافة خامة جديدة"}
+            {isEdit ? t("form.material.editTitle") : t("form.material.addTitle")}
           </DialogTitle>
           <DialogDescription>
-            الخامة تُستخدم في حساب التسعير + إنتاج Cutting Diagram.
+            {t("form.material.description")}
           </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-          <Field label="الاسم" required error={form.formState.errors.name?.message}>
-            <Input placeholder="مثال: HPL أبيض لامع" {...form.register("name")} />
+          <Field
+            label={t("form.material.name")}
+            required
+            error={form.formState.errors.name?.message}
+          >
+            <Input
+              placeholder={t("form.material.namePlaceholder")}
+              {...form.register("name")}
+            />
           </Field>
 
           <div className="grid grid-cols-2 gap-3">
-            <Field label="النوع" required>
+            <Field label={t("form.material.type")} required>
               <Select
                 value={form.watch("type")}
                 onValueChange={(v) => form.setValue("type", v as MaterialType)}
               >
                 <SelectTrigger className="h-10 w-full">
-                  <SelectValue placeholder="اختر النوع" />
+                  <SelectValue placeholder={t("form.material.typePlaceholder")} />
                 </SelectTrigger>
                 <SelectContent>
-                  {(Object.keys(TYPE_LABELS) as MaterialType[]).map((t) => (
-                    <SelectItem key={t} value={t}>
-                      {TYPE_LABELS[t]}
+                  {MATERIAL_TYPES.map((mt) => (
+                    <SelectItem key={mt} value={mt}>
+                      {TYPE_LABEL(mt)}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </Field>
-            <Field label="اللون">
+            <Field label={t("form.material.color")}>
               <div className="flex items-center gap-2">
                 <Input
                   type="color"
@@ -212,7 +230,7 @@ export function MaterialFormDialog({
 
           <div className="grid grid-cols-2 gap-3">
             <Field
-              label="السماكة (مم)"
+              label={t("form.material.thickness")}
               required
               error={form.formState.errors.thicknessMm?.message}
             >
@@ -222,12 +240,12 @@ export function MaterialFormDialog({
                   onValueChange={(v) => form.setValue("thicknessMm", Number(v))}
                 >
                   <SelectTrigger className="h-10 w-full">
-                    <SelectValue placeholder="اختر السماكة" />
+                    <SelectValue placeholder={t("form.material.thicknessPlaceholder")} />
                   </SelectTrigger>
                   <SelectContent>
-                    {GLASS_THICKNESSES.map((t) => (
-                      <SelectItem key={t} value={String(t)}>
-                        {t} مم
+                    {GLASS_THICKNESSES.map((th) => (
+                      <SelectItem key={th} value={String(th)}>
+                        {th} مم
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -237,7 +255,7 @@ export function MaterialFormDialog({
               )}
             </Field>
             <Field
-              label="السعر (ر.س / م²)"
+              label={t("form.material.price")}
               required
               error={form.formState.errors.pricePerM2?.message}
             >
@@ -249,38 +267,38 @@ export function MaterialFormDialog({
           {isGlass ? (
             <div className="space-y-3 rounded-xl border border-sky-400/30 bg-sky-500/5 p-4">
               <div className="font-mono text-xs uppercase tracking-wider text-sky-300">
-                خصائص الزجاج
+                {t("form.material.glassSection")}
               </div>
               <div className="grid grid-cols-2 gap-3">
-                <Field label="درجة الزجاج">
+                <Field label={t("form.material.glassTint")}>
                   <Select
                     value={form.watch("glassTint") ?? "clear"}
                     onValueChange={(v) => form.setValue("glassTint", String(v ?? "clear"))}
                   >
                     <SelectTrigger className="h-10 w-full">
-                      <SelectValue placeholder="اختر الدرجة" />
+                      <SelectValue placeholder={t("form.material.glassTintPlaceholder")} />
                     </SelectTrigger>
                     <SelectContent>
-                      {GLASS_TINTS.map((t) => (
-                        <SelectItem key={t.value} value={t.value}>
-                          {t.label}
+                      {GLASS_TINT_KEYS.map((k) => (
+                        <SelectItem key={k} value={k}>
+                          {TINT_LABEL(k)}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </Field>
-                <Field label="نوع التشطيب">
+                <Field label={t("form.material.glassFinish")}>
                   <Select
                     value={form.watch("glassFinish") ?? "transparent"}
                     onValueChange={(v) => form.setValue("glassFinish", String(v ?? "transparent"))}
                   >
                     <SelectTrigger className="h-10 w-full">
-                      <SelectValue placeholder="اختر التشطيب" />
+                      <SelectValue placeholder={t("form.material.glassFinishPlaceholder")} />
                     </SelectTrigger>
                     <SelectContent>
-                      {GLASS_FINISHES.map((t) => (
-                        <SelectItem key={t.value} value={t.value}>
-                          {t.label}
+                      {GLASS_FINISH_KEYS.map((k) => (
+                        <SelectItem key={k} value={k}>
+                          {FINISH_LABEL(k)}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -292,7 +310,7 @@ export function MaterialFormDialog({
 
           <DialogFooter className="gap-2 pt-2">
             <Button type="button" variant="ghost" onClick={() => setOpen(false)} disabled={isPending}>
-              إلغاء
+              {t("common.cancel")}
             </Button>
             <motion.button
               type="submit"
@@ -301,7 +319,7 @@ export function MaterialFormDialog({
               className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-br from-white to-white/90 px-5 py-2 text-sm font-semibold text-background shadow-lg shadow-violet-500/20 transition-opacity disabled:opacity-60"
             >
               {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-              {isEdit ? "حفظ التعديلات" : "إضافة الخامة"}
+              {isEdit ? t("common.saveChanges") : t("form.material.submit")}
             </motion.button>
           </DialogFooter>
         </form>

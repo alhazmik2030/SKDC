@@ -20,43 +20,37 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { createProject, updateProject } from "@/lib/actions/projects";
+import { useI18n } from "@/components/i18n-provider";
 
-const Schema = z.object({
-  name: z.string().min(2, "الاسم مطلوب"),
-  customerId: z.string().optional(),
-  status: z.nativeEnum(ProjectStatus).default("DRAFT"),
-  designStyle: z.nativeEnum(DesignStyle).optional().or(z.literal("")),
-  roomWidth: z.coerce.number().positive().optional().or(z.literal("")),
-  roomDepth: z.coerce.number().positive().optional().or(z.literal("")),
-  roomHeight: z.coerce.number().positive().optional().or(z.literal("")),
-  notes: z.string().optional(),
-});
+const NO_CUSTOMER = "__none__";
+const NO_STYLE = "__none__";
 
-const STYLE_LABELS: Record<DesignStyle, string> = {
-  MODERN: "مودرن",
-  CLASSIC: "كلاسيك",
-  NEO_CLASSIC: "نيو كلاسيك",
-  INDUSTRIAL: "صناعي",
-  SCANDINAVIAN: "اسكندنافي",
-};
+const STATUS_KEYS: ProjectStatus[] = [
+  "DRAFT",
+  "IN_REVIEW",
+  "APPROVED",
+  "IN_PRODUCTION",
+  "COMPLETED",
+  "CANCELLED",
+];
 
-type FormValues = z.input<typeof Schema>;
+const STYLE_KEYS: DesignStyle[] = [
+  "MODERN",
+  "CLASSIC",
+  "NEO_CLASSIC",
+  "INDUSTRIAL",
+  "SCANDINAVIAN",
+];
 
-const STATUS_LABELS: Record<ProjectStatus, string> = {
-  DRAFT: "مسودة",
-  IN_REVIEW: "قيد المراجعة",
-  APPROVED: "موافق عليه",
-  IN_PRODUCTION: "تحت التصنيع",
-  COMPLETED: "مكتمل",
-  CANCELLED: "ملغي",
-};
-
-export function ProjectFormDialog({
-  project,
-  customers,
-  trigger,
-}: {
+export interface ProjectFormDialogProps {
   project?: {
     id: string;
     name: string;
@@ -70,10 +64,40 @@ export function ProjectFormDialog({
   };
   customers: { id: string; name: string }[];
   trigger?: React.ReactNode;
-}) {
-  const [open, setOpen] = React.useState(false);
+  /** When true, dialog mounts already-open. Used by the lazy wrapper. */
+  defaultOpen?: boolean;
+}
+
+export function ProjectFormDialog({
+  project,
+  customers,
+  trigger,
+  defaultOpen = false,
+}: ProjectFormDialogProps) {
+  const { t } = useI18n();
+  const [open, setOpen] = React.useState(defaultOpen);
   const [isPending, startTransition] = React.useTransition();
   const isEdit = !!project;
+
+  const Schema = React.useMemo(
+    () =>
+      z.object({
+        name: z.string().min(2, t("form.customer.nameRequired")),
+        customerId: z.string().optional(),
+        status: z.nativeEnum(ProjectStatus).default("DRAFT"),
+        designStyle: z.nativeEnum(DesignStyle).optional().or(z.literal("")),
+        roomWidth: z.coerce.number().positive().optional().or(z.literal("")),
+        roomDepth: z.coerce.number().positive().optional().or(z.literal("")),
+        roomHeight: z.coerce.number().positive().optional().or(z.literal("")),
+        notes: z.string().optional(),
+      }),
+    [t],
+  );
+
+  type FormValues = z.input<typeof Schema>;
+
+  const STATUS_LABEL = (key: ProjectStatus) => t(`project.status.${key}`);
+  const STYLE_LABEL = (key: DesignStyle) => t(`project.style.${key}`);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(Schema),
@@ -102,15 +126,15 @@ export function ProjectFormDialog({
         };
         if (isEdit && project) {
           await updateProject(project.id, payload);
-          toast.success("تم تحديث المشروع");
+          toast.success(t("toast.project.updated"));
         } else {
           await createProject(payload);
-          toast.success("تم إنشاء المشروع");
+          toast.success(t("toast.project.created"));
           form.reset();
         }
         setOpen(false);
       } catch (err) {
-        toast.error((err as Error).message || "حدث خطأ");
+        toast.error((err as Error).message || t("common.unexpectedError"));
       }
     });
   };
@@ -126,7 +150,7 @@ export function ProjectFormDialog({
                 className="inline-flex items-center gap-2 rounded-2xl bg-gradient-to-br from-white to-white/90 px-5 py-2.5 text-sm font-semibold text-background shadow-lg shadow-violet-500/20 transition-transform hover:scale-[1.02]"
               >
                 <FolderPlus className="h-4 w-4" />
-                مشروع جديد
+                {t("form.project.new")}
               </button>
             )}
           </span>
@@ -135,78 +159,121 @@ export function ProjectFormDialog({
       <DialogContent className="glass max-w-xl border-0 bg-card/90 backdrop-blur-2xl">
         <DialogHeader>
           <DialogTitle className="text-gradient-aurora text-2xl">
-            {isEdit ? "تعديل مشروع" : "إنشاء مشروع جديد"}
+            {isEdit ? t("form.project.editTitle") : t("form.project.addTitle")}
           </DialogTitle>
           <DialogDescription>
-            اربط المشروع بعميل وحدد أبعاد الغرفة لبدء التصميم.
+            {t("form.project.description")}
           </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-          <Field label="اسم المشروع" required error={form.formState.errors.name?.message}>
-            <Input placeholder="مثال: مطبخ فيلا العتيبي" {...form.register("name")} />
+          <Field
+            label={t("form.project.name")}
+            required
+            error={form.formState.errors.name?.message}
+          >
+            <Input
+              placeholder={t("form.project.namePlaceholder")}
+              {...form.register("name")}
+            />
           </Field>
 
           <div className="grid grid-cols-2 gap-3">
-            <Field label="العميل">
-              <select
-                {...form.register("customerId")}
-                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            <Field label={t("form.project.customer")}>
+              <Select
+                value={form.watch("customerId") || NO_CUSTOMER}
+                onValueChange={(v) =>
+                  form.setValue("customerId", v === NO_CUSTOMER ? "" : String(v ?? ""))
+                }
               >
-                <option value="">— بدون عميل —</option>
-                {customers.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name}
-                  </option>
-                ))}
-              </select>
+                <SelectTrigger className="h-10 w-full">
+                  <SelectValue placeholder={t("form.project.noCustomer")} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={NO_CUSTOMER}>
+                    {t("form.project.noCustomer")}
+                  </SelectItem>
+                  {customers.map((c) => (
+                    <SelectItem key={c.id} value={c.id}>
+                      {c.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </Field>
-            <Field label="الحالة">
-              <select
-                {...form.register("status")}
-                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            <Field label={t("form.project.status")}>
+              <Select
+                value={form.watch("status")}
+                onValueChange={(v) => form.setValue("status", v as ProjectStatus)}
               >
-                {(Object.keys(STATUS_LABELS) as ProjectStatus[]).map((s) => (
-                  <option key={s} value={s}>
-                    {STATUS_LABELS[s]}
-                  </option>
-                ))}
-              </select>
+                <SelectTrigger className="h-10 w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {STATUS_KEYS.map((s) => (
+                    <SelectItem key={s} value={s}>
+                      {STATUS_LABEL(s)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </Field>
           </div>
 
-          <Field label="نمط التصميم">
-            <select
-              {...form.register("designStyle")}
-              className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          <Field label={t("form.project.style")}>
+            <Select
+              value={form.watch("designStyle") ? form.watch("designStyle") : NO_STYLE}
+              onValueChange={(v) =>
+                form.setValue(
+                  "designStyle",
+                  (v === NO_STYLE ? "" : (v as DesignStyle)) as FormValues["designStyle"],
+                )
+              }
             >
-              <option value="">— بدون تحديد —</option>
-              {(Object.keys(STYLE_LABELS) as DesignStyle[]).map((s) => (
-                <option key={s} value={s}>
-                  {STYLE_LABELS[s]}
-                </option>
-              ))}
-            </select>
+              <SelectTrigger className="h-10 w-full">
+                <SelectValue placeholder={t("form.project.noStyle")} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={NO_STYLE}>{t("form.project.noStyle")}</SelectItem>
+                {STYLE_KEYS.map((s) => (
+                  <SelectItem key={s} value={s}>
+                    {STYLE_LABEL(s)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </Field>
 
           <div>
             <label className="mb-1.5 block text-xs font-medium text-muted-foreground">
-              أبعاد الغرفة (مم) — اختياري
+              {t("form.project.dimensions")}
             </label>
             <div className="grid grid-cols-3 gap-2">
-              <Input type="number" placeholder="العرض" {...form.register("roomWidth")} />
-              <Input type="number" placeholder="العمق" {...form.register("roomDepth")} />
-              <Input type="number" placeholder="الارتفاع" {...form.register("roomHeight")} />
+              <Input
+                type="number"
+                placeholder={t("form.project.width")}
+                {...form.register("roomWidth")}
+              />
+              <Input
+                type="number"
+                placeholder={t("form.project.depth")}
+                {...form.register("roomDepth")}
+              />
+              <Input
+                type="number"
+                placeholder={t("form.project.height")}
+                {...form.register("roomHeight")}
+              />
             </div>
           </div>
 
-          <Field label="ملاحظات">
+          <Field label={t("common.notes")}>
             <Textarea rows={2} {...form.register("notes")} />
           </Field>
 
           <DialogFooter className="gap-2 pt-2">
             <Button type="button" variant="ghost" onClick={() => setOpen(false)} disabled={isPending}>
-              إلغاء
+              {t("common.cancel")}
             </Button>
             <motion.button
               type="submit"
@@ -215,7 +282,7 @@ export function ProjectFormDialog({
               className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-br from-white to-white/90 px-5 py-2 text-sm font-semibold text-background shadow-lg shadow-violet-500/20 transition-opacity disabled:opacity-60"
             >
               {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-              {isEdit ? "حفظ التعديلات" : "إنشاء المشروع"}
+              {isEdit ? t("common.saveChanges") : t("form.project.submit")}
             </motion.button>
           </DialogFooter>
         </form>

@@ -7,15 +7,21 @@ import Link from "next/link";
 import type { DesignerState, DesignerRoom } from "@/components/designer/types";
 import { EMPTY_DESIGN } from "@/components/designer/types";
 import { cn } from "@/lib/utils";
+import { useI18n } from "@/components/i18n-provider";
+
+function SceneLoader() {
+  const { t } = useI18n();
+  return (
+    <div className="grid h-full place-items-center text-sm text-muted-foreground">
+      <Loader2 className="h-6 w-6 animate-spin" />
+      <span className="mt-2">{t("designer3d.loading")}</span>
+    </div>
+  );
+}
 
 const Scene3D = dynamic(() => import("./scene").then((m) => m.Scene3D), {
   ssr: false,
-  loading: () => (
-    <div className="grid h-full place-items-center text-sm text-muted-foreground">
-      <Loader2 className="h-6 w-6 animate-spin" />
-      <span className="mt-2">جاري تحميل المحرك ثلاثي الأبعاد...</span>
-    </div>
-  ),
+  loading: () => <SceneLoader />,
 });
 
 export function Designer3DShell({
@@ -27,6 +33,7 @@ export function Designer3DShell({
   initialDesign: DesignerState | null;
   initialRoom: Partial<DesignerRoom>;
 }) {
+  const { t } = useI18n();
   const design: DesignerState = React.useMemo(() => {
     if (initialDesign && Array.isArray(initialDesign.units)) {
       return {
@@ -49,11 +56,11 @@ export function Designer3DShell({
           icon={lightsOn ? Sun : Moon}
           active={lightsOn}
           onClick={() => setLightsOn((v) => !v)}
-          label={lightsOn ? "إطفاء" : "إضاءة"}
+          label={lightsOn ? t("designer3d.lightsOff") : t("designer3d.lightsOn")}
         />
         <ToolbarButton icon={Lightbulb} label="LED" />
-        <ToolbarButton icon={Eye} label="عرض" />
-        <ToolbarButton icon={Maximize2} label="ملء" />
+        <ToolbarButton icon={Eye} label={t("designer3d.view")} />
+        <ToolbarButton icon={Maximize2} label={t("designer3d.fullscreen")} />
       </div>
 
       {/* Info badge */}
@@ -62,11 +69,11 @@ export function Designer3DShell({
           3D Designer · Live
         </div>
         <div className="mt-1 text-xs text-muted-foreground">
-          {design.units.length} وحدة · غرفة {design.room.width}×{design.room.depth}×
-          {design.room.height} مم
+          {design.units.length} {t("designer.unitsCount")} · {design.room.width}×
+          {design.room.depth}×{design.room.height} مم
         </div>
         <div className="mt-2 text-[10px] leading-relaxed text-muted-foreground/70">
-          💡 اضغط الأبواب لتفتح وتقفل · اسحب للدوران · عجلة الفأرة للتكبير
+          {t("designer3d.tip")}
         </div>
       </div>
 
@@ -75,7 +82,7 @@ export function Designer3DShell({
         href={`/dashboard/projects/${projectId}/designer`}
         className="glass absolute bottom-4 left-4 z-10 inline-flex items-center gap-2 rounded-xl border border-border bg-card/70 px-3 py-2 text-xs text-muted-foreground backdrop-blur-xl hover:text-foreground"
       >
-        ← العودة لمحرر 2D
+        ← {t("designer3d.backTo2D")}
       </Link>
 
       {/* The 3D scene */}

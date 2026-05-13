@@ -5,12 +5,17 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { type LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useI18n } from "@/components/i18n-provider";
 
 type EmptyStateProps = {
   icon: LucideIcon;
-  title: string;
-  description: string;
+  /** Either pass a literal string or an i18n key via *Key. */
+  title?: string;
+  titleKey?: string;
+  description?: string;
+  descriptionKey?: string;
   ctaLabel?: string;
+  ctaLabelKey?: string;
   ctaHref?: string;
   onCta?: () => void;
   className?: string;
@@ -19,12 +24,19 @@ type EmptyStateProps = {
 export function EmptyState({
   icon: Icon,
   title,
+  titleKey,
   description,
+  descriptionKey,
   ctaLabel,
+  ctaLabelKey,
   ctaHref,
   onCta,
   className,
 }: EmptyStateProps) {
+  const { t } = useI18n();
+  const titleText = titleKey ? t(titleKey) : (title ?? "");
+  const descriptionText = descriptionKey ? t(descriptionKey) : (description ?? "");
+  const ctaText = ctaLabelKey ? t(ctaLabelKey) : ctaLabel;
   return (
     <motion.div
       initial={{ opacity: 0, y: 16 }}
@@ -35,13 +47,13 @@ export function EmptyState({
         className,
       )}
     >
-      {/* Aurora glow */}
+      {/* Aurora ambient — driven by active theme. */}
       <div
         aria-hidden
         className="pointer-events-none absolute inset-0 -z-10"
         style={{
           background:
-            "radial-gradient(ellipse 70% 50% at 50% 0%, rgba(167, 139, 250, 0.18), transparent 60%)",
+            "radial-gradient(ellipse 70% 50% at 50% 0%, var(--theme-halo, rgba(167,139,250,0.18)), transparent 60%)",
         }}
       />
 
@@ -52,29 +64,37 @@ export function EmptyState({
           className="absolute inset-0 -z-10 rounded-2xl opacity-60 blur-2xl"
           style={{
             background:
-              "linear-gradient(135deg, rgba(167, 139, 250, 0.6), rgba(56, 189, 248, 0.6))",
+              "linear-gradient(135deg, var(--theme-stop-1,#a78bfa) 0%, var(--theme-stop-3,#38bdf8) 100%)",
           }}
         />
-        <div className="grid h-16 w-16 place-items-center rounded-2xl bg-gradient-to-br from-violet-500 to-sky-500 shadow-lg shadow-violet-500/30">
+        <div
+          className="grid h-16 w-16 place-items-center rounded-2xl text-white shadow-lg"
+          style={{
+            background:
+              "linear-gradient(135deg, var(--theme-stop-1,#a78bfa) 0%, var(--theme-stop-3,#38bdf8) 100%)",
+            boxShadow:
+              "0 18px 40px -10px var(--theme-halo, rgba(167,139,250,0.35))",
+          }}
+        >
           <Icon className="h-8 w-8 text-white" />
         </div>
       </div>
 
       <h3 className="text-2xl font-bold tracking-tight text-gradient-aurora">
-        {title}
+        {titleText}
       </h3>
       <p className="mt-3 max-w-md text-sm leading-relaxed text-muted-foreground">
-        {description}
+        {descriptionText}
       </p>
 
-      {(ctaLabel && ctaHref) || (ctaLabel && onCta) ? (
+      {ctaText && (ctaHref || onCta) ? (
         <div className="mt-8">
           {ctaHref ? (
             <Link
               href={ctaHref}
               className="group inline-flex items-center gap-2 rounded-2xl bg-gradient-to-br from-white to-white/90 px-6 py-3 text-sm font-semibold text-background shadow-2xl shadow-violet-500/20 transition-transform hover:scale-[1.02]"
             >
-              {ctaLabel}
+              {ctaText}
             </Link>
           ) : (
             <button
@@ -82,7 +102,7 @@ export function EmptyState({
               onClick={onCta}
               className="group inline-flex items-center gap-2 rounded-2xl bg-gradient-to-br from-white to-white/90 px-6 py-3 text-sm font-semibold text-background shadow-2xl shadow-violet-500/20 transition-transform hover:scale-[1.02]"
             >
-              {ctaLabel}
+              {ctaText}
             </button>
           )}
         </div>

@@ -89,6 +89,9 @@ model Workspace {
   projects  Project[]
   machines  Machine[]
   apiTokens ApiToken[]
+  shipments Shipment[]
+  factories      Factory[]
+  factoryOrders  FactoryOrder[]
 }
 
 model User {
@@ -157,8 +160,9 @@ model Customer {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  projects  Project[]
+  workspace      Workspace      @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  projects       Project[]
+  shipmentItems  ShipmentItem[]
 
   @@index([workspaceId])
 }
@@ -265,6 +269,8 @@ model Project {
   design         Design?
   invoices       Invoice[]
   machineExports MachineExport[]
+  shipmentItems  ShipmentItem[]
+  factoryOrders  FactoryOrder[]
 
   @@index([workspaceId])
   @@index([customerId])
@@ -437,4 +443,299 @@ model MachineExport {
   @@index([projectId])
   @@index([machineId])
   @@index([status])
+}
+
+// =====================================================================
+// SHIPMENTS
+// Workshops import finished cabinet kits from Foshan / Shunde factories.
+// Each Shipment is one container/consignment moving CN -> SA; ShipmentItems
+// link individual line items back to a Project / Customer for visibility.
+// =====================================================================
+
+enum ShipmentStatus {
+  PLANNED          // مخططة
+  IN_PRODUCTION    // قيد التصنيع في الصين
+  READY_TO_SHIP    // جاهزة للشحن
+  IN_TRANSIT       // في الطريق
+  AT_CUSTOMS       // في الجمارك
+  DELIVERED        // وُصلت / مُسلَّمة للورشة
+  CANCELLED
+}
+
+enum ShipmentMode {
+  SEA_FCL          // حاوية بحرية كاملة
+  SEA_LCL          // حاوية بحرية مشتركة
+  AIR
+  ROAD
+}
+
+model Shipment {
+  id              String          @id @default(cuid())
+  workspaceId     String
+
+  // Logistics
+  reference       String          // workshop's internal reference, e.g. "SH-2026-001"
+  mode            ShipmentMode    @default(SEA_FCL)
+  carrier         String?         // "Maersk", "MSC", "DHL", etc.
+  trackingNumber  String?         // Bill of Lading / AWB
+  containerNumber String?         // ISO 6346 (e.g. "MSKU1234567")
+
+  // Origin / destination
+  originFactory   String?         // "Foshan Sunrise Cabinets Co."
+  originCity      String?         // "Foshan" / "Shunde" / "Shanghai"
+  originCountry   String          @default("CN")
+  destPort        String?         // "Jeddah Islamic Port" / "King Abdulaziz Port (Dammam)"
+  destCity        String?         // "Riyadh"
+  destCountry     String          @default("SA")
+
+  // Status + timeline
+  status             ShipmentStatus @default(PLANNED)
+  estimatedDeparture DateTime?
+  actualDeparture    DateTime?
+  estimatedArrival   DateTime?
+  actualArrival      DateTime?
+
+  // Money
+  totalValue      Float?          // declared shipment value (workshop's cost)
+  shippingCost    Float?
+  customsDuty     Float?
+  currency        String          @default("USD")
+
+  notes           String?         @db.Text
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  workspace       Workspace       @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  items           ShipmentItem[]
+
+  @@unique([workspaceId, reference])
+  @@index([workspaceId])
+  @@index([status])
+}
+
+model ShipmentItem {
+  id          String     @id @default(cuid())
+  shipmentId  String
+  projectId   String?    // optional — sometimes items are spec'd before a project exists
+  customerId  String?    // denormalized for fast queries
+
+  // Item description
+  description String     // "خامة HPL أبيض - 25 لوح" or "وحدة سفلية ثلاثة أدراج × 6"
+  qty         Int        @default(1)
+  unitValue   Float?     // per-unit declared value
+  weightKg    Float?
+  volumeM3    Float?
+
+  notes       String?    @db.Text
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  shipment    Shipment   @relation(fields: [shipmentId], references: [id], onDelete: Cascade)
+  project     Project?   @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  customer    Customer?  @relation(fields: [customerId], references: [id], onDelete: SetNull)
+
+  @@index([shipmentId])
+  @@index([projectId])
+  @@index([customerId])
+}
+
+// =====================================================================
+// FACTORY PIPELINE
+// Chinese (and other) cabinet factories that fulfill workshop orders.
+// Each Factory is workspace-scoped and must be VERIFIED before orders flow.
+// Every FactoryOrder records a time-stamped event for every status change
+// — "حتى التسليم للمصنع يطلع بالوقت واليوم ومضمونها".
+// =====================================================================
+
+enum FactoryVerificationStatus {
+  UNVERIFIED // factory profile created but not yet submitted for verification
+  PENDING // verification submitted, awaiting admin review
+  VERIFIED // approved — orders can flow
+  REJECTED // rejected (with reason)
+  SUSPENDED // temporarily disabled
+}
+
+enum FactoryTrustGrade {
+  A // 95-100% on-time, no quality issues
+  B // 85-94%
+  C // 70-84%
+  D // <70% — caution
+  UNRATED
+}
+
+enum FactoryChannel {
+  EMAIL
+  WHATSAPP
+  WECHAT
+  DINGTALK
+  FTP
+  REST_API
+  PORTAL // factory logs into SKDC to see orders
+}
+
+enum FactoryOrderStatus {
+  DRAFT
+  SUBMITTED // sent to factory
+  ACKNOWLEDGED // factory confirmed receipt
+  QUOTED // factory quoted final price
+  ACCEPTED // workshop accepted the quote
+  IN_PRODUCTION
+  QC_PASSED
+  READY_TO_SHIP
+  SHIPPED // → creates a Shipment automatically
+  COMPLETED
+  CANCELLED
+  DISPUTED
+}
+
+model Factory {
+  id          String @id @default(cuid())
+  workspaceId String // the workshop that "owns" this factory relationship
+
+  // Identity
+  name      String // "Foshan Sunrise Cabinets Co., Ltd."
+  nameLocal String? // 佛山日升橱柜有限公司
+  legalName String?
+  taxId     String? // China unified credit code / KSA CR
+
+  // Contact
+  contactName      String?
+  contactNameLocal String?
+  contactPhone     String?
+  contactEmail     String?
+  wechatId         String?
+  whatsappNumber   String?
+
+  // Address
+  city        String? // "Foshan"
+  province    String? // "Guangdong"
+  country     String  @default("CN")
+  addressLine String?
+
+  // Capabilities
+  preferredFormat MachineFormat  @default(DXF)
+  channel         FactoryChannel @default(EMAIL)
+  endpoint        String? // URL or address for the channel
+  credentials     Json?          @default("{}") // encrypted/sensitive — app-level only
+
+  // Trust + verification
+  verificationStatus FactoryVerificationStatus @default(UNVERIFIED)
+  verificationNote   String?                   @db.Text // admin's note on approval/rejection
+  verifiedAt         DateTime?
+  verifiedBy         String? // user.id of the verifier
+  trustGrade         FactoryTrustGrade         @default(UNRATED)
+  trustScore         Float                     @default(0) // 0.0 - 100.0
+
+  // Operational
+  leadTimeDays Int? // typical lead time in days
+  paymentTerms String? // "30/70: 30% deposit, 70% before shipping"
+  notes        String? @db.Text
+
+  // Performance metrics (auto-computed via cron later)
+  totalOrders      Int @default(0)
+  onTimeDeliveries Int @default(0)
+  qualityIssues    Int @default(0)
+
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  workspace Workspace         @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  documents FactoryDocument[]
+  orders    FactoryOrder[]
+
+  @@unique([workspaceId, name])
+  @@index([workspaceId])
+  @@index([verificationStatus])
+  @@index([trustGrade])
+}
+
+model FactoryDocument {
+  id         String   @id @default(cuid())
+  factoryId  String
+  kind       String // "BUSINESS_LICENSE" / "COMMERCIAL_REGISTRATION" / "FACTORY_AUDIT" / "PHOTO" / "OTHER"
+  title      String
+  fileUrl    String // R2/S3 stored
+  fileSize   Int? // bytes
+  uploadedBy String // user.id
+  uploadedAt DateTime @default(now())
+
+  factory Factory @relation(fields: [factoryId], references: [id], onDelete: Cascade)
+
+  @@index([factoryId])
+}
+
+model FactoryOrder {
+  id          String @id @default(cuid())
+  workspaceId String
+  factoryId   String
+  projectId   String // the SKDC design being ordered
+
+  // Identifiers
+  reference String // workshop's order reference "FO-2026-001"
+
+  status FactoryOrderStatus @default(DRAFT)
+
+  // Money
+  factoryQuote    Float? // factory's quoted price
+  factoryCurrency String @default("USD") // USD / SAR / CNY
+  workshopBudget  Float?
+  acceptedAmount  Float? // final agreed price
+
+  // Timeline (each set when the corresponding status is reached)
+  submittedAt       DateTime?
+  acknowledgedAt    DateTime?
+  quotedAt          DateTime?
+  acceptedAt        DateTime?
+  productionStartAt DateTime?
+  qcPassedAt        DateTime?
+  readyToShipAt     DateTime?
+  shippedAt         DateTime?
+  completedAt       DateTime?
+  estimatedDelivery DateTime?
+  actualDelivery    DateTime?
+
+  // Files generated for the factory (kept across format changes)
+  files Json @default("[]") // [{type, format, url, generatedAt}]
+
+  // Optional shipment link (auto-created on SHIPPED status)
+  shipmentId String?
+
+  notes     String?  @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  workspace Workspace           @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  factory   Factory             @relation(fields: [factoryId], references: [id], onDelete: Restrict)
+  project   Project             @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  events    FactoryOrderEvent[]
+
+  @@unique([workspaceId, reference])
+  @@index([workspaceId])
+  @@index([factoryId])
+  @@index([projectId])
+  @@index([status])
+}
+
+/**
+ * Time-stamped audit log per FactoryOrder.
+ * "حتى التسليم للمصنع يطلع بالوقت واليوم ومضمونها" — every status change is recorded
+ * with the exact timestamp, who performed it, an optional note, and a snapshot of
+ * the items affected.
+ */
+model FactoryOrderEvent {
+  id            String             @id @default(cuid())
+  orderId       String
+  status        FactoryOrderStatus // status the order moved INTO
+  occurredAt    DateTime           @default(now())
+  actorUserId   String? // null = factory-side (their portal/API)
+  actorLabel    String? // "Mr. Wang (factory)" if non-user
+  note          String?            @db.Text
+  itemsSnapshot Json?              @default("[]") // [{description, qty, ...}] frozen at this moment
+  attachmentUrl String? // optional photo / pdf
+
+  order FactoryOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([orderId])
+  @@index([occurredAt])
 }

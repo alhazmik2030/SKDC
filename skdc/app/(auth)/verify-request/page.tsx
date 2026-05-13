@@ -4,7 +4,11 @@ import { motion } from "framer-motion";
 import Link from "next/link";
 import { ArrowRight, MailCheck } from "lucide-react";
 
+import { useI18n } from "@/components/i18n-provider";
+
 export default function VerifyRequestPage() {
+  const { t } = useI18n();
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 24, scale: 0.98 }}
@@ -18,7 +22,7 @@ export default function VerifyRequestPage() {
           className="pointer-events-none absolute -top-24 left-1/2 -z-0 h-48 w-72 -translate-x-1/2"
           style={{
             background:
-              "radial-gradient(ellipse, rgba(56,189,248,0.35) 0%, transparent 70%)",
+              "radial-gradient(ellipse, var(--theme-halo, rgba(56,189,248,0.35)) 0%, transparent 70%)",
             filter: "blur(40px)",
           }}
         />
@@ -42,13 +46,19 @@ export default function VerifyRequestPage() {
                 className="absolute inset-0 -z-10"
                 style={{
                   background:
-                    "radial-gradient(circle, rgba(56,189,248,0.5) 0%, transparent 70%)",
+                    "radial-gradient(circle, var(--theme-halo, rgba(56,189,248,0.5)) 0%, transparent 70%)",
                   filter: "blur(20px)",
                 }}
                 animate={{ scale: [1, 1.3, 1], opacity: [0.5, 0.9, 0.5] }}
                 transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
               />
-              <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-sky-400 via-violet-400 to-fuchsia-400 shadow-2xl shadow-sky-500/40">
+              <div
+                className="flex h-20 w-20 items-center justify-center rounded-2xl shadow-2xl shadow-sky-500/40"
+                style={{
+                  background:
+                    "linear-gradient(135deg, var(--theme-stop-3, #38bdf8) 0%, var(--theme-stop-1, #a78bfa) 50%, var(--theme-stop-2, #f0abfc) 100%)",
+                }}
+              >
                 <MailCheck className="h-10 w-10 text-background" />
               </div>
             </motion.div>
@@ -60,7 +70,7 @@ export default function VerifyRequestPage() {
             transition={{ duration: 0.5, delay: 0.3 }}
             className="text-4xl font-black tracking-tight md:text-5xl"
           >
-            <span className="text-gradient-aurora">تحقق من بريدك</span>
+            <span className="text-gradient-aurora">{t("auth.verify.title")}</span>
           </motion.h1>
 
           <motion.p
@@ -69,7 +79,7 @@ export default function VerifyRequestPage() {
             transition={{ duration: 0.5, delay: 0.4 }}
             className="mx-auto mt-4 max-w-sm text-balance text-sm leading-relaxed text-muted-foreground"
           >
-            أرسلنا لك رابط الدخول، انقر عليه لإكمال التسجيل.
+            {t("auth.verify.description")}
           </motion.p>
 
           <motion.div
@@ -78,11 +88,10 @@ export default function VerifyRequestPage() {
             transition={{ duration: 0.5, delay: 0.55 }}
             className="mt-8 rounded-2xl border border-white/5 bg-white/[0.02] p-4 text-xs leading-relaxed text-muted-foreground"
           >
-            <span className="block font-semibold text-foreground">نصيحة</span>
-            <span className="mt-1 block">
-              لم تجد البريد؟ تفقّد مجلد الرسائل غير المرغوبة، أو حاول مجدداً
-              بعد دقيقة.
+            <span className="block font-semibold text-foreground">
+              {t("auth.verify.tipLabel")}
             </span>
+            <span className="mt-1 block">{t("auth.verify.tipBody")}</span>
           </motion.div>
 
           <motion.div
@@ -96,13 +105,13 @@ export default function VerifyRequestPage() {
               className="group inline-flex items-center gap-2 text-sm font-semibold text-foreground transition-colors hover:text-sky-300"
             >
               <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-              العودة إلى تسجيل الدخول
+              {t("auth.verify.backToSignIn")}
             </Link>
             <Link
               href="/"
               className="text-xs text-muted-foreground transition-colors hover:text-foreground"
             >
-              العودة إلى الصفحة الرئيسية
+              {t("auth.verify.backToHome")}
             </Link>
           </motion.div>
         </div>

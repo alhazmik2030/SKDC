@@ -7,8 +7,10 @@ import { Pencil, Trash2, Cpu, Power, PowerOff } from "lucide-react";
 import type { Machine } from "@prisma/client";
 import { MachineFormDialog } from "./machine-form-dialog";
 import { deleteMachine } from "@/lib/actions/machines";
+import { useI18n } from "@/components/i18n-provider";
 
 export function MachinesList({ machines }: { machines: Machine[] }) {
+  const { t } = useI18n();
   const [isPending, startTransition] = React.useTransition();
   const [pendingId, setPendingId] = React.useState<string | null>(null);
 
@@ -16,9 +18,9 @@ export function MachinesList({ machines }: { machines: Machine[] }) {
     return (
       <div className="rounded-2xl border border-dashed border-border bg-white/[0.02] px-6 py-10 text-center">
         <Cpu className="mx-auto mb-3 h-10 w-10 text-muted-foreground" />
-        <div className="font-semibold">لم تربط أي ماكينة بعد</div>
+        <div className="font-semibold">{t("empty.machines.title")}</div>
         <p className="mt-1 text-sm text-muted-foreground">
-          اربط ماكينات ورشتك (Beam Saw، CNC، Edge Bander، إلخ) لإرسال مخطط القص مباشرة.
+          {t("empty.machines.description")}
         </p>
         <div className="mt-5">
           <MachineFormDialog />
@@ -28,14 +30,14 @@ export function MachinesList({ machines }: { machines: Machine[] }) {
   }
 
   const onDelete = (id: string, name: string) => {
-    if (!confirm(`حذف الماكينة "${name}"؟`)) return;
+    if (!confirm(t("common.deleteConfirm").replace("{name}", name))) return;
     setPendingId(id);
     startTransition(async () => {
       try {
         await deleteMachine(id);
-        toast.success("تم الحذف");
+        toast.success(t("toast.machine.deleted"));
       } catch (err) {
-        toast.error((err as Error).message || "فشل الحذف");
+        toast.error((err as Error).message || t("toast.deleteFailed"));
       } finally {
         setPendingId(null);
       }
@@ -72,7 +74,7 @@ export function MachinesList({ machines }: { machines: Machine[] }) {
                   <button
                     type="button"
                     className="grid h-7 w-7 place-items-center rounded-lg text-muted-foreground hover:bg-white/5 hover:text-foreground"
-                    aria-label="تعديل"
+                    aria-label={t("a11y.edit")}
                   >
                     <Pencil className="h-3.5 w-3.5" />
                   </button>
@@ -83,7 +85,7 @@ export function MachinesList({ machines }: { machines: Machine[] }) {
                 disabled={isPending && pendingId === m.id}
                 onClick={() => onDelete(m.id, m.name)}
                 className="grid h-7 w-7 place-items-center rounded-lg text-muted-foreground hover:bg-rose-500/10 hover:text-rose-300 disabled:opacity-50"
-                aria-label="حذف"
+                aria-label={t("a11y.delete")}
               >
                 <Trash2 className="h-3.5 w-3.5" />
               </button>
@@ -105,7 +107,7 @@ export function MachinesList({ machines }: { machines: Machine[] }) {
               }`}
             >
               {m.isActive ? <Power className="h-3 w-3" /> : <PowerOff className="h-3 w-3" />}
-              {m.isActive ? "نشطة" : "متوقفة"}
+              {m.isActive ? t("form.machine.statusActive") : t("form.machine.statusInactive")}
             </span>
           </div>
 

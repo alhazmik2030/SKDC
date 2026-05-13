@@ -20,34 +20,28 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { createMachine, updateMachine } from "@/lib/actions/machines";
+import { useI18n } from "@/components/i18n-provider";
 
-const Schema = z.object({
-  name: z.string().min(2),
-  manufacturer: z.string().min(2),
-  model: z.string().optional(),
-  adapterId: z.string().min(1),
-  category: z.nativeEnum(MachineCategory),
-  preferredFormat: z.nativeEnum(MachineFormat),
-  channel: z.nativeEnum(MachineChannel),
-  endpoint: z.string().optional(),
-  notes: z.string().optional(),
-  isActive: z.boolean().default(true),
-});
+const CATEGORY_KEYS: MachineCategory[] = [
+  "BEAM_SAW",
+  "PANEL_SAW",
+  "CNC_ROUTER",
+  "NESTING_CNC",
+  "EDGE_BANDER",
+  "DRILLING_MACHINE",
+  "BORING_MACHINE",
+  "MEMBRANE_PRESS",
+  "POSTFORMING",
+  "MULTI_FUNCTION",
+];
 
-type FormValues = z.input<typeof Schema>;
-
-const CATEGORY_LABELS: Record<MachineCategory, string> = {
-  BEAM_SAW: "منشار ألواح",
-  PANEL_SAW: "منشار بانل",
-  CNC_ROUTER: "CNC Router",
-  NESTING_CNC: "Nesting CNC",
-  EDGE_BANDER: "لاصق حواف",
-  DRILLING_MACHINE: "ماكينة تثقيب",
-  BORING_MACHINE: "ماكينة تخريم",
-  MEMBRANE_PRESS: "مكبس غشاء",
-  POSTFORMING: "Postforming",
-  MULTI_FUNCTION: "متعددة الوظائف",
-};
+const CHANNEL_KEYS: MachineChannel[] = [
+  "FILE_DOWNLOAD",
+  "FILE_UPLOAD_FTP",
+  "REST_API",
+  "MQTT",
+  "USB_AGENT",
+];
 
 const ADAPTERS = [
   { id: "generic-beamsaw-dxf", name: "DXF — منشار ألواح عام", format: "DXF" as MachineFormat, cat: "BEAM_SAW" as MachineCategory },
@@ -56,10 +50,7 @@ const ADAPTERS = [
   { id: "generic-json", name: "JSON — REST API", format: "JSON" as MachineFormat, cat: "MULTI_FUNCTION" as MachineCategory },
 ];
 
-export function MachineFormDialog({
-  machine,
-  trigger,
-}: {
+export interface MachineFormDialogProps {
   machine?: {
     id: string;
     name: string;
@@ -74,10 +65,37 @@ export function MachineFormDialog({
     isActive: boolean;
   };
   trigger?: React.ReactNode;
-}) {
-  const [open, setOpen] = React.useState(false);
+  /** When true, dialog mounts already-open. Used by the lazy wrapper. */
+  defaultOpen?: boolean;
+}
+
+export function MachineFormDialog({ machine, trigger, defaultOpen = false }: MachineFormDialogProps) {
+  const { t } = useI18n();
+  const [open, setOpen] = React.useState(defaultOpen);
   const [isPending, startTransition] = React.useTransition();
   const isEdit = !!machine;
+
+  const Schema = React.useMemo(
+    () =>
+      z.object({
+        name: z.string().min(2),
+        manufacturer: z.string().min(2),
+        model: z.string().optional(),
+        adapterId: z.string().min(1),
+        category: z.nativeEnum(MachineCategory),
+        preferredFormat: z.nativeEnum(MachineFormat),
+        channel: z.nativeEnum(MachineChannel),
+        endpoint: z.string().optional(),
+        notes: z.string().optional(),
+        isActive: z.boolean().default(true),
+      }),
+    [],
+  );
+
+  type FormValues = z.input<typeof Schema>;
+
+  const CAT_LABEL = (key: MachineCategory) => t(`machine.cat.${key}`);
+  const CHAN_LABEL = (key: MachineChannel) => t(`machine.channel.${key}`);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(Schema),
@@ -108,15 +126,15 @@ export function MachineFormDialog({
       try {
         if (isEdit && machine) {
           await updateMachine(machine.id, values);
-          toast.success("تم تحديث الماكينة");
+          toast.success(t("toast.machine.updated"));
         } else {
           await createMachine(values);
-          toast.success("تم إضافة الماكينة");
+          toast.success(t("toast.machine.added"));
           form.reset();
         }
         setOpen(false);
       } catch (err) {
-        toast.error((err as Error).message || "حدث خطأ");
+        toast.error((err as Error).message || t("common.unexpectedError"));
       }
     });
   };
@@ -132,7 +150,7 @@ export function MachineFormDialog({
                 className="inline-flex items-center gap-2 rounded-2xl bg-gradient-to-br from-white to-white/90 px-4 py-2 text-sm font-semibold text-background shadow-md"
               >
                 <Plus className="h-4 w-4" />
-                إضافة ماكينة
+                {t("form.machine.add")}
               </button>
             )}
           </span>
@@ -142,28 +160,34 @@ export function MachineFormDialog({
         <DialogHeader>
           <DialogTitle className="text-gradient-aurora text-2xl flex items-center gap-2">
             <Cpu className="h-5 w-5" />
-            {isEdit ? "تعديل ماكينة" : "ربط ماكينة جديدة"}
+            {isEdit ? t("form.machine.editTitle") : t("form.machine.addTitle")}
           </DialogTitle>
           <DialogDescription>
-            اختر adapter يطابق نوع ماكينة ورشتك. يدعم Beam Saw, CNC, Edge Bander, إلخ.
+            {t("form.machine.description")}
           </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
           <div className="grid grid-cols-2 gap-3">
-            <Field label="اسم الماكينة" required>
-              <Input placeholder="مثلاً: المنشار الرئيسي" {...form.register("name")} />
+            <Field label={t("form.machine.name")} required>
+              <Input
+                placeholder={t("form.machine.namePlaceholder")}
+                {...form.register("name")}
+              />
             </Field>
-            <Field label="المُصنع" required>
-              <Input placeholder="Homag, Biesse, محلي, إلخ" {...form.register("manufacturer")} />
+            <Field label={t("form.machine.manufacturer")} required>
+              <Input
+                placeholder={t("form.machine.manufacturerPlaceholder")}
+                {...form.register("manufacturer")}
+              />
             </Field>
           </div>
 
-          <Field label="الموديل (اختياري)">
+          <Field label={t("form.machine.model")}>
             <Input placeholder="HKL 200" {...form.register("model")} />
           </Field>
 
-          <Field label="Adapter (محرّك التصدير)" required>
+          <Field label={t("form.machine.adapter")} required>
             <select
               value={form.watch("adapterId")}
               onChange={(e) => onAdapterChange(e.target.value)}
@@ -178,43 +202,43 @@ export function MachineFormDialog({
           </Field>
 
           <div className="grid grid-cols-2 gap-3">
-            <Field label="الفئة">
+            <Field label={t("form.machine.category")}>
               <select
                 {...form.register("category")}
                 className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               >
-                {(Object.keys(CATEGORY_LABELS) as MachineCategory[]).map((c) => (
+                {CATEGORY_KEYS.map((c) => (
                   <option key={c} value={c}>
-                    {CATEGORY_LABELS[c]}
+                    {CAT_LABEL(c)}
                   </option>
                 ))}
               </select>
             </Field>
-            <Field label="قناة الإرسال">
+            <Field label={t("form.machine.channel")}>
               <select
                 {...form.register("channel")}
                 className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               >
-                <option value="FILE_DOWNLOAD">تحميل ملف يدوي</option>
-                <option value="FILE_UPLOAD_FTP">FTP تلقائي</option>
-                <option value="REST_API">REST API</option>
-                <option value="MQTT">MQTT (Industry 4.0)</option>
-                <option value="USB_AGENT">USB Agent محلي</option>
+                {CHANNEL_KEYS.map((c) => (
+                  <option key={c} value={c}>
+                    {CHAN_LABEL(c)}
+                  </option>
+                ))}
               </select>
             </Field>
           </div>
 
-          <Field label="Endpoint (للقنوات المباشرة فقط)">
+          <Field label={t("form.machine.endpoint")}>
             <Input placeholder="ftp://192.168.1.50  أو  https://api.machine.local" dir="ltr" {...form.register("endpoint")} />
           </Field>
 
-          <Field label="ملاحظات">
+          <Field label={t("common.notes")}>
             <Textarea rows={2} {...form.register("notes")} />
           </Field>
 
           <DialogFooter className="gap-2 pt-2">
             <Button type="button" variant="ghost" onClick={() => setOpen(false)} disabled={isPending}>
-              إلغاء
+              {t("common.cancel")}
             </Button>
             <button
               type="submit"
@@ -222,7 +246,7 @@ export function MachineFormDialog({
               className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-br from-white to-white/90 px-5 py-2 text-sm font-semibold text-background shadow-lg disabled:opacity-60"
             >
               {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-              {isEdit ? "حفظ" : "إضافة"}
+              {isEdit ? t("common.saveChanges") : t("common.add")}
             </button>
           </DialogFooter>
         </form>

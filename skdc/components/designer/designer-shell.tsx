@@ -14,6 +14,7 @@ import {
   EMPTY_DESIGN,
 } from "./types";
 import { saveDesign } from "@/lib/actions/projects";
+import { useI18n } from "@/components/i18n-provider";
 
 // Konva is browser-only — avoid SSR.
 const Canvas2D = dynamic(() => import("./canvas-2d").then((m) => m.Canvas2D), {
@@ -40,6 +41,7 @@ export function DesignerShell({
   initialRoom: Partial<DesignerRoom> | null;
   templates: Template[];
 }) {
+  const { t } = useI18n();
   const startingDesign: DesignerState = React.useMemo(() => {
     if (initialDesign && Array.isArray(initialDesign.units)) {
       return {
@@ -140,9 +142,9 @@ export function DesignerShell({
     startSaving(async () => {
       try {
         await saveDesign(projectId, design);
-        toast.success("تم الحفظ");
+        toast.success(t("designer.saved"));
       } catch (err) {
-        toast.error((err as Error).message || "فشل الحفظ");
+        toast.error((err as Error).message || t("designer.saveFailed"));
       }
     });
   };
@@ -155,10 +157,10 @@ export function DesignerShell({
       <aside className="glass flex w-64 shrink-0 flex-col border-l border-border/60 p-2">
         <div className="border-b border-border/50 px-2 pb-2 pt-1">
           <div className="text-xs uppercase tracking-wider text-muted-foreground">
-            القوالب
+            {t("designer.palette.title")}
           </div>
           <div className="mt-0.5 text-[10px] text-muted-foreground/70">
-            اضغط على قالب لإضافته
+            {t("designer.palette.hint")}
           </div>
         </div>
         <TemplatePalette templates={templates} onAdd={onAddTemplate} />
@@ -174,7 +176,7 @@ export function DesignerShell({
               onClick={undo}
               disabled={histIdx === 0}
               className="grid h-7 w-7 place-items-center rounded-lg text-muted-foreground hover:bg-white/5 hover:text-foreground disabled:opacity-30"
-              title="تراجع"
+              title={t("designer.undo")}
             >
               <Undo2 className="h-3.5 w-3.5" />
             </button>
@@ -183,13 +185,16 @@ export function DesignerShell({
               onClick={redo}
               disabled={histIdx >= history.length - 1}
               className="grid h-7 w-7 place-items-center rounded-lg text-muted-foreground hover:bg-white/5 hover:text-foreground disabled:opacity-30"
-              title="إعادة"
+              title={t("designer.redo")}
             >
               <Redo2 className="h-3.5 w-3.5" />
             </button>
             <div className="mx-2 h-5 w-px bg-border" />
             <span className="text-[10px] text-muted-foreground">
-              {design.units.length} وحدة
+              {design.units.length}{" "}
+              {design.units.length === 1
+                ? t("designer.unitsCount")
+                : t("designer.units")}
             </span>
           </div>
           <button
@@ -199,7 +204,7 @@ export function DesignerShell({
             className="inline-flex items-center gap-1.5 rounded-lg bg-gradient-to-br from-white to-white/90 px-3 py-1.5 text-xs font-semibold text-background shadow-md disabled:opacity-60"
           >
             {isSaving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
-            حفظ
+            {t("designer.save")}
           </button>
         </div>
 
