@@ -262,6 +262,51 @@ export function StudioShell({
   }, [selectedId, mutateDesign]);
 
   /**
+   * Drag-on-canvas via the TransformControls gizmo. Stamps the new
+   * top-down position, and if the unit was wall-bound, unbinds it so
+   * subsequent renders use (x, y) instead of the wall transform.
+   */
+  const handleUnitTransform = React.useCallback(
+    (unitId: string, next: { x: number; y: number }) => {
+      mutateDesign((d) => ({
+        ...d,
+        units: d.units.map((u) =>
+          u.id === unitId
+            ? {
+                ...u,
+                x: next.x,
+                y: next.y,
+                wallId: null,
+                wallOffset: null,
+              }
+            : u,
+        ),
+      }));
+    },
+    [mutateDesign],
+  );
+
+  /**
+   * Drag-and-drop in 3D: when the user moves a unit via TransformControls,
+   * write the new XZ position into the design and (if the unit was bound to
+   * a wall) unbind it so the wall-driven transform stops overriding the
+   * mouse position. Free-floating cabinets keep their wallId === null.
+   */
+  const handleUnitTransform = React.useCallback(
+    (unitId: string, next: { x: number; y: number }) => {
+      mutateDesign((d) => ({
+        ...d,
+        units: d.units.map((u) =>
+          u.id === unitId
+            ? { ...u, x: next.x, y: next.y, wallId: null, wallOffset: null }
+            : u,
+        ),
+      }));
+    },
+    [mutateDesign],
+  );
+
+  /**
    * Material picker → design state. Walks every unit and stamps the chosen
    * library id onto the ones matching the requested scope.
    *   - "selected" → only the currently selected unit
@@ -429,9 +474,11 @@ export function StudioShell({
           walls={walls}
           island={island}
           hideWalls={hideWalls}
+          onUnitTransform={handleUnitTransform}
           cameraPreset={camera}
           snapshotRequest={snapshotRequest}
           onSnapshot={handleSnapshotReady}
+          onUnitTransform={handleUnitTransform}
         />
       </div>
 

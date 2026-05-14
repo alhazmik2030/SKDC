@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { useFrame, type ThreeEvent } from "@react-three/fiber";
-import { Edges, Html, useGLTF } from "@react-three/drei";
+import { Edges, Html, TransformControls, useGLTF } from "@react-three/drei";
 import * as THREE from "three";
 import { RoundedBoxGeometry } from "three/examples/jsm/geometries/RoundedBoxGeometry.js";
 import type { DesignerUnit } from "@/components/designer/types";
@@ -43,6 +43,12 @@ interface Unit3DProps {
     position: [number, number, number];
     rotationY: number;
   };
+  /**
+   * Callback when the user drags the unit on the XZ plane via TransformControls.
+   * Receives the new room-space (top-down) coordinates in mm (corner anchor).
+   * If the unit was wall-bound, the caller should unbind it (clear wallId).
+   */
+  onTransform?: (next: { x: number; y: number }) => void;
 }
 
 const GLASS_TINT_COLORS: Record<string, string> = {
@@ -157,7 +163,7 @@ function useUnitMaterials(unit: DesignerUnit, selected?: boolean) {
  * Procedural 3D cabinet — built from primitive boxes, no GLB files needed.
  * Supports door open/close animation, LED groove glow, glass shelves.
  */
-export function Unit3D({ unit, options, selected, onSelect, overrideTransform }: Unit3DProps) {
+export function Unit3D({ unit, options, selected, onSelect, overrideTransform, onTransform }: Unit3DProps) {
   const w = unit.width * MM;
   const h = unit.height * MM;
   const d = unit.depth * MM;
@@ -200,8 +206,17 @@ export function Unit3D({ unit, options, selected, onSelect, overrideTransform }:
   // additive so existing kitchens are unaffected.
   const hasGlb = !!unit.glbUrl;
 
+  // Live ref to the rendered group so TransformControls can attach to it.
+  // We mirror it into state so the controls re-render once the ref settles.
+  const [groupNode, setGroupNode] = React.useState<THREE.Group | null>(null);
+  const groupRefCb = React.useCallback((g: THREE.Group | null) => {
+    setGroupNode(g);
+  }, []);
+
   return (
+    <>
     <group
+      ref={groupRefCb}
       position={groupPosition}
       rotation={groupRotation}
       onClick={(e: ThreeEvent<MouseEvent>) => {
@@ -296,6 +311,24 @@ export function Unit3D({ unit, options, selected, onSelect, overrideTransform }:
         </Html>
       ) : null}
     </group>
+    {/* Drag gizmo — appears only on the selected unit. Movement is locked
+        to the XZ plane (showY={false}) so the cabinet always stays on the
+        floor. OrbitControls auto-disables while dragging. */}
+    {selected && groupNode && onTransform ? (
+      <TransformControls
+        object={groupNode}
+        mode="translate"
+        showY={false}
+        size={0.6}
+        onObjectChange={() => {
+          const p = groupNode.position;
+          const newX = Math.round((p.x - w / 2) / MM);
+          const newY = Math.round((p.z - d / 2) / MM);
+          onTransform({ x: newX, y: newY });
+        }}
+      />
+    ) : null}
+    </>
   );
 }
 
