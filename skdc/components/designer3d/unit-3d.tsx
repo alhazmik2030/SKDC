@@ -30,6 +30,15 @@ interface Unit3DProps {
   options?: UnitOptions;
   selected?: boolean;
   onSelect?: (id: string) => void;
+  /**
+   * Optional world transform override. When present, the unit ignores its
+   * own (x, y, rotation) and uses these values instead. Used by Scene3D to
+   * place wall-bound units along their wall.
+   */
+  overrideTransform?: {
+    position: [number, number, number];
+    rotationY: number;
+  };
 }
 
 const GLASS_TINT_COLORS: Record<string, string> = {
@@ -113,7 +122,7 @@ function useUnitMaterials(unit: DesignerUnit, selected?: boolean) {
  * Procedural 3D cabinet — built from primitive boxes, no GLB files needed.
  * Supports door open/close animation, LED groove glow, glass shelves.
  */
-export function Unit3D({ unit, options, selected, onSelect }: Unit3DProps) {
+export function Unit3D({ unit, options, selected, onSelect, overrideTransform }: Unit3DProps) {
   const w = unit.width * MM;
   const h = unit.height * MM;
   const d = unit.depth * MM;
@@ -141,10 +150,19 @@ export function Unit3D({ unit, options, selected, onSelect }: Unit3DProps) {
   const py = h / 2; // bottom-anchored — sits on floor
   const pz = unit.y * MM;
 
+  // Wall-bound units (set via the Assembly step) ignore (x, y, rotation) and
+  // come positioned by Scene3D using the wall's geometry instead.
+  const groupPosition: [number, number, number] = overrideTransform
+    ? overrideTransform.position
+    : [px + w / 2, py, pz + d / 2];
+  const groupRotation: [number, number, number] = overrideTransform
+    ? [0, overrideTransform.rotationY, 0]
+    : [0, ((unit.rotation ?? 0) * Math.PI) / 180, 0];
+
   return (
     <group
-      position={[px + w / 2, py, pz + d / 2]}
-      rotation={[0, ((unit.rotation ?? 0) * Math.PI) / 180, 0]}
+      position={groupPosition}
+      rotation={groupRotation}
       onClick={(e: ThreeEvent<MouseEvent>) => {
         e.stopPropagation();
         onSelect?.(unit.id);
@@ -532,23 +550,23 @@ function ApplianceBox({
   type?: string;
   selected?: boolean;
 }) {
-  const isFridge = type?.includes("fridge");
-  const isOven = type === "oven" || type === "microwave";
+  const isFridgeSbs = type === "fridge-sbs";
+  const isFridge = type === "fridge" || isFridgeSbs;
+  const isDishwasher = type === "dishwasher";
+  const isOven = type === "oven";
+  const isMicrowave = type === "microwave";
+  const isHood = type === "hood";
   const isHob = type === "cooktop" || type === "hob";
 
-  // Brushed-steel appliance body. Anisotropy is supported on
-  // MeshPhysicalMaterial in three r158+ (we're on r184) and gives a much
-  // more convincing brushed-metal highlight.
   const bodyMaterial = React.useMemo(() => {
     const m = new THREE.MeshPhysicalMaterial({
       color: selected ? 0xa78bfa : isHob ? 0x0a0a0a : 0xd4d4d4,
       metalness: 0.85,
-      roughness: 0.2,
+      roughness: 0.22,
       clearcoat: 0.3,
       clearcoatRoughness: 0.18,
       envMapIntensity: 1.4,
     });
-    // Anisotropy reads as horizontal "grain" on stainless steel.
     if ("anisotropy" in m) {
       (m as THREE.MeshPhysicalMaterial).anisotropy = 0.4;
       (m as THREE.MeshPhysicalMaterial).anisotropyRotation = 0;
@@ -556,41 +574,497 @@ function ApplianceBox({
     return m;
   }, [selected, isHob]);
 
-  const ovenGlass = React.useMemo(
+  const blackGlass = React.useMemo(
     () =>
       new THREE.MeshPhysicalMaterial({
-        color: 0x1a1a2e,
-        transparent: true,
-        opacity: 0.7,
+        color: 0x0a0a14,
         roughness: 0.05,
         metalness: 0.4,
-        clearcoat: 0.8,
-        clearcoatRoughness: 0.05,
-        envMapIntensity: 1.5,
+        clearcoat: 0.9,
+        clearcoatRoughness: 0.04,
+        envMapIntensity: 1.8,
       }),
     [],
   );
 
+  const indicatorMaterial = React.useMemo(
+    () =>
+      new THREE.MeshStandardMaterial({
+        color: 0x4fc3f7,
+        emissive: 0x4fc3f7,
+        emissiveIntensity: 1.8,
+        toneMapped: false,
+      }),
+    [],
+  );
+
+  // Specialised renderers for the common appliances.
+  if (isDishwasher) {
+    return (
+      <Dishwasher
+        width={width}
+        height={height}
+        depth={depth}
+        bodyMaterial={bodyMaterial}
+        panelMaterial={blackGlass}
+        indicatorMaterial={indicatorMaterial}
+      />
+    );
+  }
+
+  if (isOven) {
+    return (
+      <Oven
+        width={width}
+        height={height}
+        depth={depth}
+        bodyMaterial={bodyMaterial}
+        glassMaterial={blackGlass}
+        indicatorMaterial={indicatorMaterial}
+      />
+    );
+  }
+
+  if (isMicrowave) {
+    return (
+      <Microwave
+        width={width}
+        height={height}
+        depth={depth}
+        bodyMaterial={bodyMaterial}
+        glassMaterial={blackGlass}
+      />
+    );
+  }
+
+  if (isHood) {
+    return (
+      <Hood
+        width={width}
+        height={height}
+        depth={depth}
+        bodyMaterial={bodyMaterial}
+      />
+    );
+  }
+
+  if (isHob) {
+    return (
+      <Hob
+        width={width}
+        height={height}
+        depth={depth}
+        bodyMaterial={bodyMaterial}
+        glassMaterial={blackGlass}
+      />
+    );
+  }
+
+  if (isFridge) {
+    return (
+      <Fridge
+        width={width}
+        height={height}
+        depth={depth}
+        sideBySide={isFridgeSbs}
+        bodyMaterial={bodyMaterial}
+        indicatorMaterial={indicatorMaterial}
+      />
+    );
+  }
+
+  // Generic fallback box.
   return (
     <group>
-      <mesh geometry={getRoundedGeo(width, height, depth, BODY_EDGE_RADIUS, EDGE_SMOOTHNESS)}>
+      <mesh
+        geometry={getRoundedGeo(
+          width,
+          height,
+          depth,
+          BODY_EDGE_RADIUS,
+          EDGE_SMOOTHNESS,
+        )}
+      >
         <primitive object={bodyMaterial} attach="material" />
         <Edges color={selected ? "#fff" : "#666"} />
       </mesh>
-      {/* Oven door window */}
-      {isOven ? (
-        <mesh position={[0, 0, depth / 2 + 0.005]}>
-          <boxGeometry args={[width * 0.7, height * 0.55, 0.005]} />
-          <primitive object={ovenGlass} attach="material" />
+    </group>
+  );
+}
+
+function Dishwasher({
+  width,
+  height,
+  depth,
+  bodyMaterial,
+  panelMaterial,
+  indicatorMaterial,
+}: {
+  width: number;
+  height: number;
+  depth: number;
+  bodyMaterial: THREE.Material;
+  panelMaterial: THREE.Material;
+  indicatorMaterial: THREE.Material;
+}) {
+  const frontZ = depth / 2;
+  const controlH = 0.06;
+  return (
+    <group>
+      {/* Body */}
+      <mesh
+        geometry={getRoundedGeo(width, height, depth, BODY_EDGE_RADIUS, EDGE_SMOOTHNESS)}
+      >
+        <primitive object={bodyMaterial} attach="material" />
+      </mesh>
+      {/* Front door panel — slightly recessed brushed steel */}
+      <mesh position={[0, -controlH / 2, frontZ + 0.001]}>
+        <boxGeometry args={[width * 0.95, height - controlH * 1.5, 0.002]} />
+        <primitive object={bodyMaterial} attach="material" />
+      </mesh>
+      {/* Top control panel — black glass strip */}
+      <mesh position={[0, height / 2 - controlH / 2, frontZ + 0.002]}>
+        <boxGeometry args={[width * 0.95, controlH, 0.002]} />
+        <primitive object={panelMaterial} attach="material" />
+      </mesh>
+      {/* Indicator LEDs */}
+      <mesh position={[width * 0.3, height / 2 - controlH / 2, frontZ + 0.004]}>
+        <boxGeometry args={[0.006, 0.006, 0.001]} />
+        <primitive object={indicatorMaterial} attach="material" />
+      </mesh>
+      <mesh position={[width * 0.32, height / 2 - controlH / 2, frontZ + 0.004]}>
+        <boxGeometry args={[0.006, 0.006, 0.001]} />
+        <primitive object={indicatorMaterial} attach="material" />
+      </mesh>
+      {/* Handle — long horizontal pull near the top */}
+      <ChromeHandle
+        position={[0, height / 2 - controlH - 0.04, frontZ + 0.015]}
+        size={[width * 0.7, 0.022, 0.022]}
+      />
+      {/* Brand badge spot */}
+      <mesh position={[0, -height * 0.05, frontZ + 0.004]}>
+        <boxGeometry args={[width * 0.18, 0.012, 0.001]} />
+        <meshStandardMaterial color="#888" metalness={0.5} roughness={0.4} />
+      </mesh>
+    </group>
+  );
+}
+
+function Oven({
+  width,
+  height,
+  depth,
+  bodyMaterial,
+  glassMaterial,
+  indicatorMaterial,
+}: {
+  width: number;
+  height: number;
+  depth: number;
+  bodyMaterial: THREE.Material;
+  glassMaterial: THREE.Material;
+  indicatorMaterial: THREE.Material;
+}) {
+  const frontZ = depth / 2;
+  const controlH = 0.09;
+  const doorH = height - controlH - 0.02;
+  return (
+    <group>
+      <mesh
+        geometry={getRoundedGeo(width, height, depth, BODY_EDGE_RADIUS, EDGE_SMOOTHNESS)}
+      >
+        <primitive object={bodyMaterial} attach="material" />
+      </mesh>
+      {/* Top control band */}
+      <mesh position={[0, height / 2 - controlH / 2, frontZ + 0.001]}>
+        <boxGeometry args={[width * 0.95, controlH, 0.003]} />
+        <primitive object={bodyMaterial} attach="material" />
+      </mesh>
+      {/* Display panel */}
+      <mesh position={[0, height / 2 - controlH / 2, frontZ + 0.005]}>
+        <boxGeometry args={[width * 0.35, controlH * 0.5, 0.001]} />
+        <primitive object={glassMaterial} attach="material" />
+      </mesh>
+      {/* Display LED */}
+      <mesh position={[0, height / 2 - controlH / 2, frontZ + 0.007]}>
+        <boxGeometry args={[width * 0.18, 0.012, 0.001]} />
+        <primitive object={indicatorMaterial} attach="material" />
+      </mesh>
+      {/* Knobs */}
+      {[-0.32, -0.18, 0.18, 0.32].map((kx, i) => (
+        <mesh
+          key={i}
+          position={[width * kx, height / 2 - controlH / 2, frontZ + 0.012]}
+          rotation={[Math.PI / 2, 0, 0]}
+        >
+          <cylinderGeometry args={[0.012, 0.014, 0.012, 24]} />
+          <meshStandardMaterial color="#222" metalness={0.6} roughness={0.3} />
         </mesh>
-      ) : null}
-      {/* Fridge handle */}
-      {isFridge ? (
+      ))}
+      {/* Door — black glass */}
+      <mesh position={[0, -controlH / 2, frontZ + 0.003]}>
+        <boxGeometry args={[width * 0.92, doorH, 0.005]} />
+        <primitive object={glassMaterial} attach="material" />
+      </mesh>
+      {/* Door bezel */}
+      <mesh position={[0, -controlH / 2, frontZ + 0.005]}>
+        <boxGeometry args={[width * 0.94, doorH + 0.01, 0.001]} />
+        <primitive object={bodyMaterial} attach="material" />
+      </mesh>
+      {/* Handle */}
+      <ChromeHandle
+        position={[0, -controlH / 2 + doorH / 2 - 0.04, frontZ + 0.02]}
+        size={[width * 0.85, 0.022, 0.025]}
+      />
+    </group>
+  );
+}
+
+function Microwave({
+  width,
+  height,
+  depth,
+  bodyMaterial,
+  glassMaterial,
+}: {
+  width: number;
+  height: number;
+  depth: number;
+  bodyMaterial: THREE.Material;
+  glassMaterial: THREE.Material;
+}) {
+  const frontZ = depth / 2;
+  const ctrlW = width * 0.28;
+  const doorW = width - ctrlW - 0.02;
+  return (
+    <group>
+      <mesh
+        geometry={getRoundedGeo(width, height, depth, BODY_EDGE_RADIUS, EDGE_SMOOTHNESS)}
+      >
+        <primitive object={bodyMaterial} attach="material" />
+      </mesh>
+      {/* Door window on left half */}
+      <mesh position={[-width / 2 + doorW / 2 + 0.005, 0, frontZ + 0.002]}>
+        <boxGeometry args={[doorW - 0.04, height * 0.7, 0.002]} />
+        <primitive object={glassMaterial} attach="material" />
+      </mesh>
+      {/* Control panel on right side */}
+      <mesh position={[width / 2 - ctrlW / 2 - 0.005, 0, frontZ + 0.002]}>
+        <boxGeometry args={[ctrlW - 0.01, height * 0.85, 0.002]} />
+        <primitive object={bodyMaterial} attach="material" />
+      </mesh>
+      {/* Buttons grid */}
+      {[0, 1, 2].map((row) =>
+        [0, 1, 2].map((col) => (
+          <mesh
+            key={`${row}-${col}`}
+            position={[
+              width / 2 - ctrlW + 0.012 + col * 0.018,
+              -height * 0.15 + row * 0.025,
+              frontZ + 0.004,
+            ]}
+          >
+            <boxGeometry args={[0.012, 0.012, 0.001]} />
+            <meshStandardMaterial color="#333" />
+          </mesh>
+        )),
+      )}
+      {/* Handle on the door */}
+      <ChromeHandle
+        position={[
+          -width / 2 + doorW - 0.015,
+          0,
+          frontZ + 0.012,
+        ]}
+        size={[0.015, height * 0.6, 0.018]}
+      />
+    </group>
+  );
+}
+
+function Hood({
+  width,
+  height,
+  depth,
+  bodyMaterial,
+}: {
+  width: number;
+  height: number;
+  depth: number;
+  bodyMaterial: THREE.Material;
+}) {
+  // Hood = chimney style: a tapered box.
+  const baseH = height * 0.4;
+  const chimneyH = height - baseH;
+  return (
+    <group>
+      {/* Lower extraction box */}
+      <mesh position={[0, -height / 2 + baseH / 2, 0]}>
+        <boxGeometry args={[width, baseH, depth * 0.7]} />
+        <primitive object={bodyMaterial} attach="material" />
+      </mesh>
+      {/* Chimney — narrower */}
+      <mesh position={[0, -height / 2 + baseH + chimneyH / 2, 0]}>
+        <boxGeometry args={[width * 0.35, chimneyH, depth * 0.35]} />
+        <primitive object={bodyMaterial} attach="material" />
+      </mesh>
+      {/* Bottom filter grille */}
+      <mesh position={[0, -height / 2 + 0.002, 0]}>
+        <boxGeometry args={[width * 0.9, 0.002, depth * 0.6]} />
+        <meshStandardMaterial color="#1a1a1e" metalness={0.5} roughness={0.6} />
+      </mesh>
+      {/* Control bar */}
+      <mesh position={[0, -height / 2 + baseH * 0.3, depth / 2 * 0.35 + 0.002]}>
+        <boxGeometry args={[width * 0.45, 0.012, 0.001]} />
+        <meshStandardMaterial color="#0a0a14" metalness={0.4} roughness={0.2} />
+      </mesh>
+    </group>
+  );
+}
+
+function Hob({
+  width,
+  height,
+  depth,
+  bodyMaterial,
+  glassMaterial,
+}: {
+  width: number;
+  height: number;
+  depth: number;
+  bodyMaterial: THREE.Material;
+  glassMaterial: THREE.Material;
+}) {
+  return (
+    <group>
+      {/* Body — slim plate */}
+      <mesh>
+        <boxGeometry args={[width, height, depth]} />
+        <primitive object={bodyMaterial} attach="material" />
+      </mesh>
+      {/* Glass top */}
+      <mesh position={[0, height / 2 + 0.001, 0]}>
+        <boxGeometry args={[width * 0.98, 0.004, depth * 0.95]} />
+        <primitive object={glassMaterial} attach="material" />
+      </mesh>
+      {/* 4 burners — circles */}
+      {[
+        [-width * 0.25, depth * 0.2],
+        [width * 0.25, depth * 0.2],
+        [-width * 0.25, -depth * 0.2],
+        [width * 0.25, -depth * 0.2],
+      ].map(([bx, bz], i) => (
+        <mesh
+          key={i}
+          position={[bx, height / 2 + 0.003, bz]}
+          rotation={[Math.PI / 2, 0, 0]}
+        >
+          <ringGeometry args={[Math.min(width, depth) * 0.07, Math.min(width, depth) * 0.10, 32]} />
+          <meshStandardMaterial color="#222" roughness={0.5} />
+        </mesh>
+      ))}
+    </group>
+  );
+}
+
+function Fridge({
+  width,
+  height,
+  depth,
+  sideBySide,
+  bodyMaterial,
+  indicatorMaterial,
+}: {
+  width: number;
+  height: number;
+  depth: number;
+  sideBySide: boolean;
+  bodyMaterial: THREE.Material;
+  indicatorMaterial: THREE.Material;
+}) {
+  const frontZ = depth / 2;
+
+  if (sideBySide) {
+    // Two full-height doors
+    const halfW = width / 2;
+    return (
+      <group>
+        <mesh
+          geometry={getRoundedGeo(width, height, depth, BODY_EDGE_RADIUS, EDGE_SMOOTHNESS)}
+        >
+          <primitive object={bodyMaterial} attach="material" />
+        </mesh>
+        {/* Left door */}
+        <mesh position={[-halfW / 2, 0, frontZ + 0.001]}>
+          <boxGeometry args={[halfW - 0.01, height - 0.02, 0.002]} />
+          <primitive object={bodyMaterial} attach="material" />
+        </mesh>
+        {/* Right door */}
+        <mesh position={[halfW / 2, 0, frontZ + 0.001]}>
+          <boxGeometry args={[halfW - 0.01, height - 0.02, 0.002]} />
+          <primitive object={bodyMaterial} attach="material" />
+        </mesh>
+        {/* Door handles — long vertical */}
         <ChromeHandle
-          position={[width / 2 - 0.04, 0, depth / 2 + 0.01]}
-          size={[0.02, height * 0.7, 0.02]}
+          position={[-halfW / 4, 0, frontZ + 0.012]}
+          size={[0.02, height * 0.65, 0.022]}
         />
-      ) : null}
+        <ChromeHandle
+          position={[halfW / 4, 0, frontZ + 0.012]}
+          size={[0.02, height * 0.65, 0.022]}
+        />
+        {/* Display panel on left door (water/ice) */}
+        <mesh position={[-halfW / 2, height * 0.22, frontZ + 0.004]}>
+          <boxGeometry args={[halfW * 0.6, height * 0.18, 0.001]} />
+          <meshPhysicalMaterial
+            color={0x0a0a14}
+            roughness={0.05}
+            metalness={0.4}
+          />
+        </mesh>
+        <mesh position={[-halfW / 2, height * 0.22, frontZ + 0.006]}>
+          <boxGeometry args={[halfW * 0.3, 0.014, 0.001]} />
+          <primitive object={indicatorMaterial} attach="material" />
+        </mesh>
+      </group>
+    );
+  }
+
+  // Standard fridge with freezer on bottom
+  const freezerH = height * 0.32;
+  const fridgeH = height - freezerH - 0.01;
+  return (
+    <group>
+      <mesh
+        geometry={getRoundedGeo(width, height, depth, BODY_EDGE_RADIUS, EDGE_SMOOTHNESS)}
+      >
+        <primitive object={bodyMaterial} attach="material" />
+      </mesh>
+      {/* Upper fridge door */}
+      <mesh position={[0, freezerH / 2, frontZ + 0.001]}>
+        <boxGeometry args={[width - 0.02, fridgeH, 0.002]} />
+        <primitive object={bodyMaterial} attach="material" />
+      </mesh>
+      {/* Lower freezer drawer */}
+      <mesh position={[0, -height / 2 + freezerH / 2 + 0.002, frontZ + 0.001]}>
+        <boxGeometry args={[width - 0.02, freezerH - 0.005, 0.002]} />
+        <primitive object={bodyMaterial} attach="material" />
+      </mesh>
+      {/* Fridge handle */}
+      <ChromeHandle
+        position={[0, freezerH / 2 + fridgeH * 0.2, frontZ + 0.012]}
+        size={[width * 0.65, 0.022, 0.022]}
+      />
+      {/* Freezer handle */}
+      <ChromeHandle
+        position={[0, -height / 2 + freezerH * 0.6, frontZ + 0.012]}
+        size={[width * 0.65, 0.022, 0.022]}
+      />
+      {/* Divider line */}
+      <mesh position={[0, freezerH / 2 - fridgeH / 2 - 0.005, frontZ + 0.003]}>
+        <boxGeometry args={[width - 0.01, 0.003, 0.001]} />
+        <meshStandardMaterial color="#1a1a1e" />
+      </mesh>
     </group>
   );
 }

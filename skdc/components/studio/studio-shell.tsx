@@ -106,6 +106,7 @@ export function StudioShell({
   );
   const [camera, setCamera] = React.useState<CameraPreset>("perspective");
   const [time, setTime] = React.useState<TimeOfDay>("morning");
+  const [hideWalls, setHideWalls] = React.useState(false);
   const [isSaving, startSaving] = React.useTransition();
   const [lastSavedAt, setLastSavedAt] = React.useState<number | null>(null);
 
@@ -216,6 +217,10 @@ export function StudioShell({
           selectedId={selectedId}
           onSelect={setSelectedId}
           ambientLightOn={ambientLightOn}
+          timeOfDay={time}
+          walls={walls}
+          island={island}
+          hideWalls={hideWalls}
         />
       </div>
 
@@ -310,6 +315,60 @@ export function StudioShell({
             {walls.length}
           </span>
         ) : null}
+      </button>
+
+      {/* === "Hide walls" pill — anchored below the Walls pill ===
+          Lets the designer take clean product shots of the cabinets without
+          the surrounding walls or floor. Wall-bound units keep their
+          position (their world transform was already baked from the wall
+          geometry), so toggling this on/off is a pure visual change. */}
+      <button
+        type="button"
+        onClick={() => setHideWalls((v) => !v)}
+        aria-pressed={hideWalls}
+        aria-label={hideWalls ? "إظهار الجدران" : "إخفاء الجدران للقطة نظيفة"}
+        title={hideWalls ? "إظهار الجدران" : "إخفاء الجدران للقطة نظيفة"}
+        className="absolute end-3 top-[100px] z-[41] flex h-[34px] items-center gap-1.5 rounded-xl border px-3 text-[11px] font-bold transition-all"
+        style={{
+          background: hideWalls
+            ? "linear-gradient(135deg, var(--theme-stop-2,#f0abfc), var(--theme-stop-3,#38bdf8))"
+            : "rgba(8,8,12,0.92)",
+          color: hideWalls ? "#fff" : "rgba(255,255,255,0.85)",
+          borderColor: hideWalls ? "transparent" : "rgba(255,255,255,0.08)",
+          backdropFilter: "blur(28px)",
+          WebkitBackdropFilter: "blur(28px)",
+          boxShadow: hideWalls
+            ? "0 8px 24px -8px var(--theme-halo,rgba(167,139,250,0.55))"
+            : "0 20px 40px -16px rgba(0,0,0,0.65)",
+        }}
+      >
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          className="h-3.5 w-3.5"
+          aria-hidden
+        >
+          {hideWalls ? (
+            <>
+              {/* eye-off icon */}
+              <path d="M9.88 9.88a3 3 0 1 0 4.24 4.24" />
+              <path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68" />
+              <path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61" />
+              <line x1="2" y1="2" x2="22" y2="22" />
+            </>
+          ) : (
+            <>
+              {/* eye icon */}
+              <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
+              <circle cx="12" cy="12" r="3" />
+            </>
+          )}
+        </svg>
+        <span>{hideWalls ? "إظهار الجدران" : "إخفاء"}</span>
       </button>
 
       {/* === Walls panel (collapsible, always reachable) === */}

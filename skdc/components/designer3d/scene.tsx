@@ -11,6 +11,8 @@ import {
 import * as THREE from "three";
 import type { DesignerState, DesignerUnit } from "@/components/designer/types";
 import { Unit3D } from "./unit-3d";
+import { Walls3D, type IslandRender } from "./walls-3d";
+import { worldPlacement, type WallData } from "@/lib/designer/wall-geometry";
 
 const MM = 0.001;
 
@@ -104,6 +106,20 @@ export interface Scene3DProps {
    * daylight suitable for showcasing materials and finishes.
    */
   timeOfDay?: TimeOfDay;
+  /**
+   * Custom walls from the wizard. When provided, replaces the generic
+   * RoomShell with each wall positioned at its angle and length, plus
+   * window/door cutouts. Wall-bound units (Unit.wallId set) are placed
+   * relative to their wall.
+   */
+  walls?: WallData[];
+  island?: IslandRender | null;
+  /**
+   * Hide walls + floor for clean product shots. Wall-bound units stay in
+   * place since their world transform was already computed from the wall
+   * geometry — they keep their position even without the wall visible.
+   */
+  hideWalls?: boolean;
 }
 
 export function Scene3D({
@@ -112,6 +128,9 @@ export function Scene3D({
   onSelect,
   ambientLightOn = true,
   timeOfDay = "noon",
+  walls,
+  island,
+  hideWalls = false,
 }: Scene3DProps) {
   const roomW = design.room.width * MM;
   const roomD = design.room.depth * MM;
@@ -139,6 +158,9 @@ export function Scene3D({
         roomH={roomH}
         ambientLightOn={ambientLightOn}
         timeOfDay={timeOfDay}
+        walls={walls}
+        island={island}
+        hideWalls={hideWalls}
       />
     </Canvas>
   );
@@ -153,6 +175,9 @@ function SceneContents({
   roomH,
   ambientLightOn,
   timeOfDay,
+  walls,
+  island,
+  hideWalls,
 }: {
   design: DesignerState;
   selectedId: string | null;
@@ -162,8 +187,19 @@ function SceneContents({
   roomH: number;
   ambientLightOn: boolean;
   timeOfDay: TimeOfDay;
+  walls?: WallData[];
+  island?: IslandRender | null;
+  hideWalls: boolean;
 }) {
   const tod = TOD_PRESETS[timeOfDay];
+  const useWizardWalls = !!(walls && walls.length > 0);
+
+  // Lookup map so each wall-bound unit can find its wall in O(1).
+  const wallById = React.useMemo(() => {
+    const map = new Map<string, WallData>();
+    if (walls) for (const w of walls) map.set(w.id, w);
+    return map;
+  }, [walls]);
 
   // Place the sun a comfortable distance outside the room so the shadow
   // camera's orthographic frustum (configured below) covers the whole
@@ -235,16 +271,31 @@ function SceneContents({
         </>
       ) : null}
 
-      {/* === Room walls + parquet floor === */}
-      <RoomShell width={roomW} depth={roomD} height={roomH} />
-
-      {/* === Window emissive plane on the back wall (drives bloom later) === */}
-      <WindowGlow
-        width={roomW}
-        depth={roomD}
-        height={roomH}
-        timeOfDay={timeOfDay}
-      />
+      {/* === Room walls + parquet floor ===
+          When walls from the wizard are provided, render those instead of
+          the generic two-wall shell. Falls back to the legacy shell only
+          for projects that haven't run the wizard yet. */}
+      {hideWalls ? null : useWizardWalls ? (
+        <Walls3D
+          walls={walls!}
+          island={island ?? null}
+          room={{
+            width: design.room.width,
+            depth: design.room.depth,
+            height: design.room.height,
+          }}
+        />
+      ) : (
+        <>
+          <RoomShell width={roomW} depth={roomD} height={roomH} />
+          <WindowGlow
+            width={roomW}
+            depth={roomD}
+            height={roomH}
+            timeOfDay={timeOfDay}
+          />
+        </>
+      )}
 
       {/* === Floor grid (kept for designer affordance) === */}
       <Grid
@@ -274,15 +325,47 @@ function SceneContents({
       </React.Suspense>
 
       {/* === Units === */}
-      {design.units.map((unit: DesignerUnit) => (
-        <Unit3D
-          key={unit.id}
-          unit={unit}
-          options={extractOptions(unit)}
-          selected={unit.id === selectedId}
-          onSelect={onSelect}
-        />
-      ))}
+      {design.units.map((unit: DesignerUnit) => {
+        // Wall-bound units: compute world transform from their wall.
+        let overrideTransform:
+          | { position: [number, number, number]; rotationY: number }
+          | undefined;
+        if (unit.wallId) {
+          const wall = wallById.get(unit.wallId);
+          if (wall) {
+            const offsetCentre =
+              (unit.wallOffset ?? 0) + unit.width / 2;
+            const baseHeight =
+              unit.baseHeight ??
+              (unit.category === "UPPER_CABINET" ? 1400 : 0);
+            const floorCentre = baseHeight + unit.height / 2;
+            const placement = worldPlacement(wall, offsetCentre, floorCentre);
+            // Push the unit toward the interior by half its depth so the
+            // back panel sits flush against the wall.
+            const pushDist = (unit.depth * MM) / 2;
+            overrideTransform = {
+              position: [
+                placement.position[0] +
+                  placement.interiorNormal[0] * pushDist,
+                placement.position[1],
+                placement.position[2] +
+                  placement.interiorNormal[2] * pushDist,
+              ],
+              rotationY: placement.rotationY,
+            };
+          }
+        }
+        return (
+          <Unit3D
+            key={unit.id}
+            unit={unit}
+            options={extractOptions(unit)}
+            selected={unit.id === selectedId}
+            onSelect={onSelect}
+            overrideTransform={overrideTransform}
+          />
+        );
+      })}
 
       {/* === HDRI environment (drei-bundled, no network) === */}
       <React.Suspense fallback={null}>
