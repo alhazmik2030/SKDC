@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { X } from "lucide-react";
 import type { KitchenTemplate, Template } from "@prisma/client";
 import { useI18n } from "@/components/i18n-provider";
 import type { StudioCategory } from "./studio-types";
@@ -14,6 +15,8 @@ export interface StudioPaletteProps {
   glbTemplates: KitchenTemplate[];
   onAdd: (tpl: Template) => void;
   onAddGlb: (tpl: KitchenTemplate) => void;
+  /** Close the palette (deselect the rail category). */
+  onClose?: () => void;
 }
 
 export function StudioPalette({
@@ -22,6 +25,7 @@ export function StudioPalette({
   glbTemplates,
   onAdd,
   onAddGlb,
+  onClose,
 }: StudioPaletteProps) {
   const { t } = useI18n();
 
@@ -50,10 +54,23 @@ export function StudioPalette({
         maxHeight: "calc(100vh - 220px)",
       }}
     >
-      <h3 className="mb-2.5 flex items-center justify-between text-[12px] font-semibold">
+      <h3 className="mb-2.5 flex items-center justify-between gap-2 text-[12px] font-semibold">
         <span>{t(`template.category.${category}`)}</span>
-        <span className="text-[10px] font-normal text-white/55">
-          {filtered.length + filteredGlb.length} {t("designer.palette.title")}
+        <span className="flex items-center gap-2">
+          <span className="text-[10px] font-normal text-white/55">
+            {filtered.length + filteredGlb.length} {t("designer.palette.title")}
+          </span>
+          {onClose ? (
+            <button
+              type="button"
+              onClick={onClose}
+              aria-label={t("studio.close") || "إغلاق"}
+              title={t("studio.close") || "إغلاق"}
+              className="grid h-5 w-5 place-items-center rounded-md text-white/55 transition-colors hover:bg-white/5 hover:text-white"
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+          ) : null}
         </span>
       </h3>
 

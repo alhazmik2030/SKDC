@@ -13,6 +13,10 @@ import {
   Footprints,
   RotateCcw,
   Wand2,
+  Layers,
+  Eye,
+  EyeOff,
+  Palette,
 } from "lucide-react";
 import { useI18n } from "@/components/i18n-provider";
 import { cn } from "@/lib/utils";
@@ -20,19 +24,12 @@ import type { CameraPreset, TimeOfDay } from "./studio-types";
 
 const BORDER = "rgba(255,255,255,0.08)";
 
-const TIME_LABELS: Record<TimeOfDay, string> = {
-  morning: "studio.time.morning",
-  noon: "studio.time.noon",
-  sunset: "studio.time.sunset",
-  night: "studio.time.night",
-};
-
-const TIME_EMOJI: Record<TimeOfDay, string> = {
-  morning: "🌅",
-  noon: "☀️",
-  sunset: "🌇",
-  night: "🌙",
-};
+const TIME_DEFS: Array<{ id: TimeOfDay; emoji: string; labelKey: string }> = [
+  { id: "morning", emoji: "🌅", labelKey: "studio.time.morning" },
+  { id: "noon", emoji: "☀️", labelKey: "studio.time.noon" },
+  { id: "sunset", emoji: "🌇", labelKey: "studio.time.sunset" },
+  { id: "night", emoji: "🌙", labelKey: "studio.time.night" },
+];
 
 const CAMERA_DEFS: Array<{
   id: CameraPreset;
@@ -50,6 +47,7 @@ export interface StudioToolbarProps {
   camera: CameraPreset;
   onCamera: (c: CameraPreset) => void;
   time: TimeOfDay;
+  onTime?: (t: TimeOfDay) => void;
   onSnapshot: () => void;
   onShare: () => void;
   onPhotoreal: () => void;
@@ -57,12 +55,20 @@ export interface StudioToolbarProps {
   onRedo?: () => void;
   canUndo?: boolean;
   canRedo?: boolean;
+  wallsPanelOpen?: boolean;
+  onToggleWalls?: () => void;
+  wallsCount?: number;
+  hideWalls?: boolean;
+  onToggleHideWalls?: () => void;
+  materialsPickerOpen?: boolean;
+  onToggleMaterials?: () => void;
 }
 
 export function StudioToolbar({
   camera,
   onCamera,
   time,
+  onTime,
   onSnapshot,
   onShare,
   onPhotoreal,
@@ -70,6 +76,13 @@ export function StudioToolbar({
   onRedo,
   canUndo = false,
   canRedo = false,
+  wallsPanelOpen = false,
+  onToggleWalls,
+  wallsCount = 0,
+  hideWalls = false,
+  onToggleHideWalls,
+  materialsPickerOpen = false,
+  onToggleMaterials,
 }: StudioToolbarProps) {
   const { t } = useI18n();
 
@@ -124,11 +137,71 @@ export function StudioToolbar({
 
       <VSep />
 
-      <PillTag>
-        {TIME_EMOJI[time]} {t(TIME_LABELS[time])}
-      </PillTag>
-      <PillTag>PBR Real-time</PillTag>
-      <PillTag>FPS: 60</PillTag>
+      {/* Scene-level toggles — previously floating pills on the right edge of
+          the canvas, now anchored in the toolbar so they're discoverable. */}
+      <div className="flex gap-[2px]">
+        <TBtn
+          active={wallsPanelOpen}
+          onClick={onToggleWalls}
+          aria-label="الجدران"
+          title="الجدران"
+        >
+          <Layers className="h-3.5 w-3.5" />
+          <span>الجدران</span>
+          {wallsCount > 0 ? (
+            <span
+              className="ms-1 grid h-4 min-w-[16px] place-items-center rounded-full px-1 text-[9px] font-black"
+              style={{
+                background: wallsPanelOpen
+                  ? "rgba(255,255,255,0.25)"
+                  : "rgba(167,139,250,0.20)",
+                color: wallsPanelOpen ? "#fff" : "#e0d4ff",
+              }}
+            >
+              {wallsCount}
+            </span>
+          ) : null}
+        </TBtn>
+        <TBtn
+          active={hideWalls}
+          onClick={onToggleHideWalls}
+          aria-label={hideWalls ? "إظهار الجدران" : "إخفاء الجدران"}
+          title={hideWalls ? "إظهار الجدران" : "إخفاء الجدران للقطة نظيفة"}
+        >
+          {hideWalls ? (
+            <EyeOff className="h-3.5 w-3.5" />
+          ) : (
+            <Eye className="h-3.5 w-3.5" />
+          )}
+          <span>{hideWalls ? "إظهار" : "إخفاء"}</span>
+        </TBtn>
+        <TBtn
+          active={materialsPickerOpen}
+          onClick={onToggleMaterials}
+          aria-label="مكتبة الخامات"
+          title="مكتبة الخامات"
+        >
+          <Palette className="h-3.5 w-3.5" />
+          <span>خامات</span>
+        </TBtn>
+      </div>
+
+      <VSep />
+
+      {/* Time-of-day — interactive (was duplicated in StudioBottomBar). */}
+      <div className="flex gap-[2px]">
+        {TIME_DEFS.map(({ id, emoji, labelKey }) => (
+          <TBtn
+            key={id}
+            active={time === id}
+            onClick={() => onTime?.(id)}
+            aria-label={t(labelKey)}
+            title={t(labelKey)}
+          >
+            <span>{emoji}</span>
+          </TBtn>
+        ))}
+      </div>
 
       <div className="ms-auto flex gap-1.5">
         <TBtn onClick={onSnapshot}>
@@ -201,16 +274,3 @@ function VSep() {
   );
 }
 
-function PillTag({ children }: { children: React.ReactNode }) {
-  return (
-    <span
-      className="inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-[11px] text-white/55"
-      style={{
-        background: "rgba(255,255,255,0.04)",
-        borderColor: BORDER,
-      }}
-    >
-      {children}
-    </span>
-  );
-}

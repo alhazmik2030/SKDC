@@ -25,6 +25,12 @@ const OPTIONS: ShapeOption[] = [
     hintEn: "One wall (A) — simplest layout, great for small kitchens",
   },
   {
+    value: "TWO_WALL",
+    labelKey: "designer.roomShape.twoWall",
+    hintAr: "جداران متقابلان (A + C) — مطبخ ممر طويل ضيق",
+    hintEn: "Two facing walls (A + C) — long narrow galley kitchen",
+  },
+  {
     value: "L_SHAPE",
     labelKey: "designer.roomShape.lShape",
     hintAr: "جداران متعامدان (A + B) — يستغل الزاوية",

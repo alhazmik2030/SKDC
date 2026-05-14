@@ -94,6 +94,16 @@ function ShapeBody({
         </>
       );
 
+    case "TWO_WALL":
+      return (
+        <>
+          <line x1={A.x1} y1={A.y1} x2={A.x2} y2={A.y2} {...wallProps} />
+          <line x1={C.x1} y1={C.y1} x2={C.x2} y2={C.y2} {...wallProps} />
+          {label(A.lx, A.ly, "A")}
+          {label(C.lx, C.ly, "C")}
+        </>
+      );
+
     case "L_SHAPE":
       return (
         <>
