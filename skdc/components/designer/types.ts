@@ -22,6 +22,16 @@ export type DesignerUnit = {
   rotation: 0 | 90 | 180 | 270;
   /** Visual color (theme-aware later). */
   color: string;
+  /**
+   * Wall binding — set by the Assembly step.
+   * `wallId` matches a `RoomWall.id`; `wallOffset` is the distance in mm from
+   * the wall's start point along its length. Free-floating units (e.g. the
+   * island) leave both undefined and rely on `x`/`y` instead.
+   */
+  wallId?: string | null;
+  wallOffset?: number | null;
+  /** Height from floor to bottom of the unit (mm). 0 for base cabinets. */
+  baseHeight?: number;
 };
 
 export type DesignerRoom = {
