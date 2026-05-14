@@ -18,6 +18,9 @@ import type { DesignerUnit, DesignerRoom } from "@/components/designer/types";
 /** Mouse drag must come within this many mm of an edge to snap to it. */
 export const SNAP_THRESHOLD = 80;
 
+/** Default thickness of every wall in mm (matches Project.wallThickness). */
+const DEFAULT_WALL_THICKNESS = 80;
+
 /** Light vertical wallet — keep this much depth-gap between upper rows. */
 const ROW_GAP = 0;
 
@@ -57,13 +60,18 @@ export function findFreeSpot(
   existing: DesignerUnit[],
   next: { width: number; depth: number; category: string },
   room: DesignerRoom,
+  wallThickness: number = DEFAULT_WALL_THICKNESS,
 ): { x: number; y: number } {
   const cat = next.category;
   const row = pickRowFilter(cat);
 
+  // Anchor of the usable interior — clear of every wall's footprint.
+  const minX = wallThickness;
+  const minY = wallThickness;
+
   // Find peers — units in the same logical row.
-  const peers = existing.filter((u) => row(u.category));
-  if (peers.length === 0) return { x: 0, y: 0 };
+  const peers = existing.filter((u) => row(u.category) && !u.wallId);
+  if (peers.length === 0) return { x: minX, y: minY };
 
   // Sort by x to find the rightmost edge.
   const sorted = [...peers].sort((a, b) => a.x + a.width - (b.x + b.width));
@@ -71,12 +79,12 @@ export function findFreeSpot(
   const rightEdge = last.x + last.width;
 
   // Wrap to a second row when we run out of frontage.
-  if (rightEdge + next.width > room.width) {
-    const deepest = peers.reduce((m, u) => Math.max(m, u.depth), 0);
-    return { x: 0, y: deepest + ROW_GAP };
+  if (rightEdge + next.width > room.width - wallThickness) {
+    const deepest = peers.reduce((m, u) => Math.max(m, u.y + u.depth), 0);
+    return { x: minX, y: Math.max(minY, deepest + ROW_GAP) };
   }
 
-  return { x: rightEdge, y: last.y };
+  return { x: rightEdge, y: Math.max(minY, last.y) };
 }
 
 function pickRowFilter(category: string): (other: string) => boolean {
@@ -99,6 +107,7 @@ export function snapPosition(
   others: UnitShape[],
   room: DesignerRoom,
   proposed: { x: number; y: number },
+  wallThickness: number = DEFAULT_WALL_THICKNESS,
 ): { x: number; y: number; snappedTo?: string } {
   let x = proposed.x;
   let y = proposed.y;
@@ -107,19 +116,27 @@ export function snapPosition(
   const w = dragged.width;
   const d = dragged.depth;
 
-  // ---- Snap to room walls (only if close enough) ----
-  if (Math.abs(x) < SNAP_THRESHOLD) {
-    x = 0;
+  // Usable interior is shrunk by the wall thickness on every side so a
+  // cabinet's back panel can rest flush against a wall without intersecting
+  // the wall mesh in the 3D scene.
+  const minX = wallThickness;
+  const minY = wallThickness;
+  const maxX = Math.max(minX, room.width - w - wallThickness);
+  const maxY = Math.max(minY, room.depth - d - wallThickness);
+
+  // ---- Snap to interior wall edges (only if close enough) ----
+  if (Math.abs(x - minX) < SNAP_THRESHOLD) {
+    x = minX;
     snappedTo = "wall-left";
-  } else if (Math.abs(x + w - room.width) < SNAP_THRESHOLD) {
-    x = room.width - w;
+  } else if (Math.abs(x - maxX) < SNAP_THRESHOLD) {
+    x = maxX;
     snappedTo = "wall-right";
   }
-  if (Math.abs(y) < SNAP_THRESHOLD) {
-    y = 0;
+  if (Math.abs(y - minY) < SNAP_THRESHOLD) {
+    y = minY;
     snappedTo = "wall-front";
-  } else if (Math.abs(y + d - room.depth) < SNAP_THRESHOLD) {
-    y = room.depth - d;
+  } else if (Math.abs(y - maxY) < SNAP_THRESHOLD) {
+    y = maxY;
     snappedTo = "wall-back";
   }
 
@@ -158,28 +175,35 @@ export function snapPosition(
     }
   }
 
-  // ---- Final overlap resolution: if the new spot overlaps anyone, push
-  // the dragged unit to the closest non-overlapping edge of the offender.
-  for (const o of others) {
-    if (o.id === dragged.id) continue;
-    if (!boxesOverlap({ x, y, width: w, depth: d }, o)) continue;
+  // ---- Iterative overlap resolution: keep pushing the dragged unit out
+  // of every offender until no intersection remains, or we hit the safety
+  // cap (a chain of 6 obstacles is more than enough for any real kitchen
+  // and stops a feedback loop from freezing the inspector).
+  for (let pass = 0; pass < 6; pass++) {
+    let cleared = true;
+    for (const o of others) {
+      if (o.id === dragged.id) continue;
+      if (!boxesOverlap({ x, y, width: w, depth: d }, o)) continue;
+      cleared = false;
 
-    // Choose the cheapest axis to escape along.
-    const pushRight = o.x + o.width - x;        // how far right to clear
-    const pushLeft = x + w - o.x;               // how far left
-    const pushDown = o.y + o.depth - y;
-    const pushUp = y + d - o.y;
-    const min = Math.min(pushRight, pushLeft, pushDown, pushUp);
+      // Choose the cheapest axis to escape along.
+      const pushRight = o.x + o.width - x;        // how far right to clear
+      const pushLeft = x + w - o.x;               // how far left
+      const pushDown = o.y + o.depth - y;
+      const pushUp = y + d - o.y;
+      const min = Math.min(pushRight, pushLeft, pushDown, pushUp);
 
-    if (min === pushRight) x = o.x + o.width;
-    else if (min === pushLeft) x = o.x - w;
-    else if (min === pushDown) y = o.y + o.depth;
-    else y = o.y - d;
+      if (min === pushRight) x = o.x + o.width;
+      else if (min === pushLeft) x = o.x - w;
+      else if (min === pushDown) y = o.y + o.depth;
+      else y = o.y - d;
+    }
+    if (cleared) break;
   }
 
-  // ---- Clamp inside the room ----
-  x = Math.max(0, Math.min(x, room.width - w));
-  y = Math.max(0, Math.min(y, room.depth - d));
+  // ---- Clamp inside the usable interior (room minus wall thickness) ----
+  x = Math.max(minX, Math.min(x, maxX));
+  y = Math.max(minY, Math.min(y, maxY));
 
   return { x: Math.round(x), y: Math.round(y), snappedTo };
 }

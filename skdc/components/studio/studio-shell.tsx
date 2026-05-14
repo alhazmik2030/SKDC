@@ -57,6 +57,8 @@ function makeId(): string {
 export interface StudioProject {
   id: string;
   name: string;
+  /** Wall thickness in mm — used to keep cabinets from poking into walls. */
+  wallThickness?: number | null;
 }
 
 export interface StudioShellProps {
@@ -191,6 +193,7 @@ export function StudioShell({
             category: template.category,
           },
           d.room,
+          project.wallThickness ?? 80,
         );
         const unit: DesignerUnit = {
           id: makeId(),
@@ -228,6 +231,7 @@ export function StudioShell({
             category: template.category,
           },
           d.room,
+          project.wallThickness ?? 80,
         );
         const unit: DesignerUnit = {
           id: makeId(),
@@ -303,8 +307,11 @@ export function StudioShell({
       mutateDesign((d) => {
         const dragged = d.units.find((u) => u.id === unitId);
         if (!dragged) return d;
+        // Skip wall-bound units in the snap pool — their real position
+        // comes from wall geometry, not their cached (x, y), so factoring
+        // them in here would let a free-floating unit clip through them.
         const others = d.units
-          .filter((u) => u.id !== unitId)
+          .filter((u) => u.id !== unitId && !u.wallId)
           .map((u) => ({
             id: u.id,
             x: u.x,
@@ -325,6 +332,7 @@ export function StudioShell({
           others,
           d.room,
           next,
+          project.wallThickness ?? 80,
         );
         // Vertical lift snap — 0 mm (floor) and 1400 mm (upper-cabinet ledge)
         // are the two natural stops, so we soft-snap baseHeight within 50 mm.

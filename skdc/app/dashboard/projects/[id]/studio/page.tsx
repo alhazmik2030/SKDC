@@ -62,7 +62,11 @@ export default async function StudioPage({
 
   return (
     <StudioShell
-      project={{ id: project.id, name: project.name }}
+      project={{
+        id: project.id,
+        name: project.name,
+        wallThickness: project.wallThickness,
+      }}
       templates={templates}
       glbTemplates={glbTemplates}
       initialDesign={initialDesign}
