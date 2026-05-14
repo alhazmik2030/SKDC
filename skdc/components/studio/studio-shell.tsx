@@ -36,6 +36,7 @@ import type {
   TimeOfDay,
   StudioCategory,
 } from "./studio-types";
+import { findFreeSpot, snapPosition } from "@/lib/designer/placement";
 
 const Scene3D = dynamic(
   () => import("@/components/designer3d/scene").then((m) => m.Scene3D),
@@ -181,21 +182,32 @@ export function StudioShell({
 
   const handleAddTemplate = React.useCallback(
     (template: Template) => {
-      const unit: DesignerUnit = {
-        id: makeId(),
-        templateId: template.id,
-        templateName: template.name,
-        category: template.category,
-        x: 100,
-        y: 100,
-        width: template.defaultWidth,
-        depth: template.defaultDepth,
-        height: template.defaultHeight,
-        rotation: 0,
-        color: getCategoryColor(template.category),
-      };
-      mutateDesign((d) => ({ ...d, units: [...d.units, unit] }));
-      setSelectedId(unit.id);
+      mutateDesign((d) => {
+        const spot = findFreeSpot(
+          d.units,
+          {
+            width: template.defaultWidth,
+            depth: template.defaultDepth,
+            category: template.category,
+          },
+          d.room,
+        );
+        const unit: DesignerUnit = {
+          id: makeId(),
+          templateId: template.id,
+          templateName: template.name,
+          category: template.category,
+          x: spot.x,
+          y: spot.y,
+          width: template.defaultWidth,
+          depth: template.defaultDepth,
+          height: template.defaultHeight,
+          rotation: 0,
+          color: getCategoryColor(template.category),
+        };
+        setSelectedId(unit.id);
+        return { ...d, units: [...d.units, unit] };
+      });
     },
     [mutateDesign],
   );
@@ -207,22 +219,33 @@ export function StudioShell({
    */
   const handleAddGlbTemplate = React.useCallback(
     (template: KitchenTemplate) => {
-      const unit: DesignerUnit = {
-        id: makeId(),
-        templateId: null, // GLB templates live in a separate table
-        templateName: template.nameAr ?? template.name,
-        category: template.category,
-        x: 100,
-        y: 100,
-        width: template.defaultWidth,
-        depth: template.defaultDepth,
-        height: template.defaultHeight,
-        rotation: 0,
-        color: getCategoryColor(template.category),
-        glbUrl: template.glbUrl,
-      };
-      mutateDesign((d) => ({ ...d, units: [...d.units, unit] }));
-      setSelectedId(unit.id);
+      mutateDesign((d) => {
+        const spot = findFreeSpot(
+          d.units,
+          {
+            width: template.defaultWidth,
+            depth: template.defaultDepth,
+            category: template.category,
+          },
+          d.room,
+        );
+        const unit: DesignerUnit = {
+          id: makeId(),
+          templateId: null,
+          templateName: template.nameAr ?? template.name,
+          category: template.category,
+          x: spot.x,
+          y: spot.y,
+          width: template.defaultWidth,
+          depth: template.defaultDepth,
+          height: template.defaultHeight,
+          rotation: 0,
+          color: getCategoryColor(template.category),
+          glbUrl: template.glbUrl,
+        };
+        setSelectedId(unit.id);
+        return { ...d, units: [...d.units, unit] };
+      });
     },
     [mutateDesign],
   );
@@ -268,6 +291,60 @@ export function StudioShell({
    *   - "category" → every unit sharing the selected unit's category
    *   - "all"      → every unit in the design
    */
+  /**
+   * Drag-to-move via TransformControls. We pipe the proposed (x, y)
+   * through snapPosition so the cabinet magnetically locks to walls and
+   * adjacent units, refuses to overlap, and stays inside the room.
+   * Wall-bound units (wallId set) are also released here so the
+   * wall-driven transform stops overriding the mouse position.
+   */
+  const handleUnitTransform = React.useCallback(
+    (unitId: string, next: { x: number; y: number }) => {
+      mutateDesign((d) => {
+        const dragged = d.units.find((u) => u.id === unitId);
+        if (!dragged) return d;
+        const others = d.units
+          .filter((u) => u.id !== unitId)
+          .map((u) => ({
+            id: u.id,
+            x: u.x,
+            y: u.y,
+            width: u.width,
+            depth: u.depth,
+            category: u.category,
+          }));
+        const snapped = snapPosition(
+          {
+            id: dragged.id,
+            x: next.x,
+            y: next.y,
+            width: dragged.width,
+            depth: dragged.depth,
+            category: dragged.category,
+          },
+          others,
+          d.room,
+          next,
+        );
+        return {
+          ...d,
+          units: d.units.map((u) =>
+            u.id === unitId
+              ? {
+                  ...u,
+                  x: snapped.x,
+                  y: snapped.y,
+                  wallId: null,
+                  wallOffset: null,
+                }
+              : u,
+          ),
+        };
+      });
+    },
+    [mutateDesign],
+  );
+
   const handleApplyMaterial = React.useCallback(
     (materialId: string, scope: MaterialApplyScope) => {
       mutateDesign((d) => {
@@ -432,6 +509,7 @@ export function StudioShell({
           cameraPreset={camera}
           snapshotRequest={snapshotRequest}
           onSnapshot={handleSnapshotReady}
+          onUnitTransform={handleUnitTransform}
         />
       </div>
 

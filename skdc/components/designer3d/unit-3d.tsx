@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { useFrame, type ThreeEvent } from "@react-three/fiber";
-import { Edges, Html, useGLTF } from "@react-three/drei";
+import { Edges, Html, TransformControls, useGLTF } from "@react-three/drei";
 import * as THREE from "three";
 import { RoundedBoxGeometry } from "three/examples/jsm/geometries/RoundedBoxGeometry.js";
 import type { DesignerUnit } from "@/components/designer/types";
@@ -43,6 +43,12 @@ interface Unit3DProps {
     position: [number, number, number];
     rotationY: number;
   };
+  /**
+   * Callback when the user drags the unit on the XZ plane. Returns the new
+   * top-down room-space (corner-anchored mm). StudioShell then snaps it
+   * against walls + neighbours and applies the result.
+   */
+  onTransform?: (next: { x: number; y: number }) => void;
 }
 
 const GLASS_TINT_COLORS: Record<string, string> = {
@@ -157,7 +163,7 @@ function useUnitMaterials(unit: DesignerUnit, selected?: boolean) {
  * Procedural 3D cabinet — built from primitive boxes, no GLB files needed.
  * Supports door open/close animation, LED groove glow, glass shelves.
  */
-export function Unit3D({ unit, options, selected, onSelect, overrideTransform }: Unit3DProps) {
+export function Unit3D({ unit, options, selected, onSelect, overrideTransform, onTransform }: Unit3DProps) {
   const w = unit.width * MM;
   const h = unit.height * MM;
   const d = unit.depth * MM;
@@ -200,8 +206,14 @@ export function Unit3D({ unit, options, selected, onSelect, overrideTransform }:
   // additive so existing kitchens are unaffected.
   const hasGlb = !!unit.glbUrl;
 
+  // Group node for the drag gizmo. We mirror the ref into state so the
+  // controls re-render once the mesh has actually mounted.
+  const [groupNode, setGroupNode] = React.useState<THREE.Group | null>(null);
+
   return (
+    <>
     <group
+      ref={(g: THREE.Group | null) => setGroupNode(g)}
       position={groupPosition}
       rotation={groupRotation}
       onClick={(e: ThreeEvent<MouseEvent>) => {
@@ -296,6 +308,21 @@ export function Unit3D({ unit, options, selected, onSelect, overrideTransform }:
         </Html>
       ) : null}
     </group>
+    {selected && groupNode && onTransform ? (
+      <TransformControls
+        object={groupNode}
+        mode="translate"
+        showY={false}
+        size={0.6}
+        onObjectChange={() => {
+          const p = groupNode.position;
+          const newX = Math.round((p.x - w / 2) / MM);
+          const newY = Math.round((p.z - d / 2) / MM);
+          onTransform({ x: newX, y: newY });
+        }}
+      />
+    ) : null}
+    </>
   );
 }
 
