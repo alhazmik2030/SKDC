@@ -135,12 +135,6 @@ export interface Scene3DProps {
    */
   snapshotRequest?: number;
   onSnapshot?: (dataUrl: string) => void;
-  /**
-   * Callback fired when the user drags a unit on the XZ plane via the
-   * TransformControls gizmo. Receives the dragged unit's id and its new
-   * top-down room-space coordinates in mm.
-   */
-  onUnitTransform?: (unitId: string, next: { x: number; y: number }) => void;
 }
 
 export function Scene3D({
@@ -155,7 +149,6 @@ export function Scene3D({
   cameraPreset = "perspective",
   snapshotRequest,
   onSnapshot,
-  onUnitTransform,
 }: Scene3DProps) {
   const roomW = design.room.width * MM;
   const roomD = design.room.depth * MM;
@@ -192,7 +185,6 @@ export function Scene3D({
         cameraPreset={cameraPreset}
         snapshotRequest={snapshotRequest}
         onSnapshot={onSnapshot}
-        onUnitTransform={onUnitTransform}
       />
     </Canvas>
   );
@@ -289,7 +281,6 @@ function SceneContents({
   cameraPreset,
   snapshotRequest,
   onSnapshot,
-  onUnitTransform,
 }: {
   design: DesignerState;
   selectedId: string | null;
@@ -305,7 +296,6 @@ function SceneContents({
   cameraPreset: SceneCameraPreset;
   snapshotRequest?: number;
   onSnapshot?: (dataUrl: string) => void;
-  onUnitTransform?: (unitId: string, next: { x: number; y: number }) => void;
 }) {
   const tod = TOD_PRESETS[timeOfDay];
   const useWizardWalls = !!(walls && walls.length > 0);
@@ -479,7 +469,6 @@ function SceneContents({
             selected={unit.id === selectedId}
             onSelect={onSelect}
             overrideTransform={overrideTransform}
-            onTransform={onUnitTransform ? (next) => onUnitTransform(unit.id, next) : undefined}
           />
         );
       })}
