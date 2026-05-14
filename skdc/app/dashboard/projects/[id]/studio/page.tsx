@@ -2,6 +2,7 @@ import { notFound, redirect } from "next/navigation";
 import { db } from "@/lib/db";
 import { requireWorkspaceId } from "@/lib/auth-helpers";
 import { listTemplates } from "@/lib/actions/templates";
+import { listGlbTemplates } from "@/lib/actions/templates-glb";
 import { StudioShell } from "@/components/studio/studio-shell";
 import type { DesignerState } from "@/components/designer/types";
 
@@ -18,7 +19,7 @@ export default async function StudioPage({
   const { skipWizard } = await searchParams;
   const workspaceId = await requireWorkspaceId();
 
-  const [project, templates] = await Promise.all([
+  const [project, templates, glbTemplates] = await Promise.all([
     db.project.findFirst({
       where: { id, workspaceId },
       include: {
@@ -31,6 +32,7 @@ export default async function StudioPage({
       },
     }),
     listTemplates(),
+    listGlbTemplates(),
   ]);
   if (!project) notFound();
 
@@ -62,6 +64,7 @@ export default async function StudioPage({
     <StudioShell
       project={{ id: project.id, name: project.name }}
       templates={templates}
+      glbTemplates={glbTemplates}
       initialDesign={initialDesign}
       initialRoom={initialRoom}
       walls={walls}
