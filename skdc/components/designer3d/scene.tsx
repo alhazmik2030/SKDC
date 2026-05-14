@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Canvas } from "@react-three/fiber";
+import { Canvas, useThree } from "@react-three/fiber";
 import {
   OrbitControls,
   Grid,
@@ -13,6 +13,8 @@ import type { DesignerState, DesignerUnit } from "@/components/designer/types";
 import { Unit3D } from "./unit-3d";
 import { Walls3D, type IslandRender } from "./walls-3d";
 import { worldPlacement, type WallData } from "@/lib/designer/wall-geometry";
+
+export type SceneCameraPreset = "perspective" | "top" | "front" | "walk" | "hero";
 
 const MM = 0.001;
 
@@ -120,6 +122,19 @@ export interface Scene3DProps {
    * geometry — they keep their position even without the wall visible.
    */
   hideWalls?: boolean;
+  /**
+   * Active camera preset. The scene animates the perspective camera + orbit
+   * target whenever this changes so the designer can flip between hero shot,
+   * top-down, front, walk-through, etc.
+   */
+  cameraPreset?: SceneCameraPreset;
+  /**
+   * When this number changes, the scene captures the current canvas as a PNG
+   * and invokes onSnapshot with the data URL. Treat it like a "request id" —
+   * incrementing it triggers exactly one snapshot.
+   */
+  snapshotRequest?: number;
+  onSnapshot?: (dataUrl: string) => void;
 }
 
 export function Scene3D({
@@ -131,6 +146,9 @@ export function Scene3D({
   walls,
   island,
   hideWalls = false,
+  cameraPreset = "perspective",
+  snapshotRequest,
+  onSnapshot,
 }: Scene3DProps) {
   const roomW = design.room.width * MM;
   const roomD = design.room.depth * MM;
@@ -147,6 +165,9 @@ export function Scene3D({
         toneMappingExposure: 1.0,
         antialias: true,
         powerPreference: "high-performance",
+        // Required so `gl.domElement.toDataURL()` returns a non-blank PNG when
+        // the user clicks the Snapshot button.
+        preserveDrawingBuffer: true,
       }}
     >
       <SceneContents
@@ -161,9 +182,88 @@ export function Scene3D({
         walls={walls}
         island={island}
         hideWalls={hideWalls}
+        cameraPreset={cameraPreset}
+        snapshotRequest={snapshotRequest}
+        onSnapshot={onSnapshot}
       />
     </Canvas>
   );
+}
+
+// Camera positions per preset, in units of room dimensions (m). Each tuple is
+// [posX, posY, posZ, targetX, targetY, targetZ] in fractions of (roomW, roomH,
+// roomD). Hero shot is a 30°-elevation 45°-azimuth isometric 3/4.
+const CAM_PRESETS: Record<
+  SceneCameraPreset,
+  { pos: [number, number, number]; target: [number, number, number] }
+> = {
+  perspective: { pos: [0.9, 1.1, 1.2], target: [0.5, 0.25, 0.5] },
+  hero:        { pos: [1.4, 1.4, 1.4], target: [0.5, 0.35, 0.5] },
+  top:         { pos: [0.5, 2.5, 0.5], target: [0.5, 0.0, 0.5] },
+  front:       { pos: [0.5, 0.5, 2.0], target: [0.5, 0.3, 0.5] },
+  walk:        { pos: [0.5, 0.6, 0.6], target: [0.5, 0.4, 0.0] },
+};
+
+function CameraDriver({
+  preset,
+  roomW,
+  roomH,
+  roomD,
+}: {
+  preset: SceneCameraPreset;
+  roomW: number;
+  roomH: number;
+  roomD: number;
+}) {
+  const { camera, controls } = useThree();
+  React.useEffect(() => {
+    const cfg = CAM_PRESETS[preset];
+    const px = cfg.pos[0] * roomW;
+    const py = cfg.pos[1] * roomH;
+    const pz = cfg.pos[2] * roomD;
+    const tx = cfg.target[0] * roomW;
+    const ty = cfg.target[1] * roomH;
+    const tz = cfg.target[2] * roomD;
+    camera.position.set(px, py, pz);
+    camera.lookAt(tx, ty, tz);
+    camera.updateProjectionMatrix();
+    // OrbitControls keeps its own target; sync it so the next drag pivots
+    // around the intended look-at.
+    const ctrl = controls as
+      | { target?: THREE.Vector3; update?: () => void }
+      | null
+      | undefined;
+    if (ctrl?.target) {
+      ctrl.target.set(tx, ty, tz);
+      ctrl.update?.();
+    }
+  }, [preset, camera, controls, roomW, roomH, roomD]);
+  return null;
+}
+
+function SnapshotDriver({
+  requestId,
+  onCapture,
+}: {
+  requestId: number | undefined;
+  onCapture: ((url: string) => void) | undefined;
+}) {
+  const { gl, scene, camera } = useThree();
+  const lastReq = React.useRef<number | undefined>(undefined);
+  React.useEffect(() => {
+    if (requestId == null || requestId === lastReq.current || !onCapture) return;
+    lastReq.current = requestId;
+    // Render once with no transparency so the screenshot has a solid bg, then
+    // pull the data URL straight off the canvas.
+    gl.render(scene, camera);
+    try {
+      const url = gl.domElement.toDataURL("image/png");
+      onCapture(url);
+    } catch (e) {
+      console.error("Snapshot failed:", e);
+    }
+  }, [requestId, gl, scene, camera, onCapture]);
+  return null;
 }
 
 function SceneContents({
@@ -178,6 +278,9 @@ function SceneContents({
   walls,
   island,
   hideWalls,
+  cameraPreset,
+  snapshotRequest,
+  onSnapshot,
 }: {
   design: DesignerState;
   selectedId: string | null;
@@ -190,6 +293,9 @@ function SceneContents({
   walls?: WallData[];
   island?: IslandRender | null;
   hideWalls: boolean;
+  cameraPreset: SceneCameraPreset;
+  snapshotRequest?: number;
+  onSnapshot?: (dataUrl: string) => void;
 }) {
   const tod = TOD_PRESETS[timeOfDay];
   const useWizardWalls = !!(walls && walls.length > 0);
@@ -377,12 +483,23 @@ function SceneContents({
 
       {/* === Camera controls === */}
       <OrbitControls
+        makeDefault
         target={[roomW / 2, roomH / 4, roomD / 2]}
         maxPolarAngle={Math.PI / 2.1}
         minDistance={1}
         maxDistance={20}
         enableDamping
         dampingFactor={0.08}
+      />
+      <CameraDriver
+        preset={cameraPreset}
+        roomW={roomW}
+        roomH={roomH}
+        roomD={roomD}
+      />
+      <SnapshotDriver
+        requestId={snapshotRequest}
+        onCapture={onSnapshot}
       />
     </>
   );

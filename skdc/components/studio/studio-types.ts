@@ -5,7 +5,7 @@
 
 import type { TemplateCategory } from "@prisma/client";
 
-export type CameraPreset = "perspective" | "top" | "front" | "walk";
+export type CameraPreset = "perspective" | "top" | "front" | "walk" | "hero";
 export type TimeOfDay = "morning" | "noon" | "sunset" | "night";
 
 /** Categories surfaced in the right-side rail. Matches Prisma TemplateCategory. */

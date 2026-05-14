@@ -12,6 +12,7 @@ import {
   ArrowRight,
   Footprints,
   RotateCcw,
+  Wand2,
 } from "lucide-react";
 import { useI18n } from "@/components/i18n-provider";
 import { cn } from "@/lib/utils";
@@ -39,6 +40,7 @@ const CAMERA_DEFS: Array<{
   Icon: React.ComponentType<{ className?: string }>;
 }> = [
   { id: "perspective", labelKey: "studio.camera.perspective", Icon: Box },
+  { id: "hero", labelKey: "studio.camera.hero", Icon: Wand2 },
   { id: "top", labelKey: "studio.camera.top", Icon: ArrowDown },
   { id: "front", labelKey: "studio.camera.front", Icon: ArrowRight },
   { id: "walk", labelKey: "studio.camera.walk", Icon: Footprints },
@@ -51,6 +53,10 @@ export interface StudioToolbarProps {
   onSnapshot: () => void;
   onShare: () => void;
   onPhotoreal: () => void;
+  onUndo?: () => void;
+  onRedo?: () => void;
+  canUndo?: boolean;
+  canRedo?: boolean;
 }
 
 export function StudioToolbar({
@@ -60,6 +66,10 @@ export function StudioToolbar({
   onSnapshot,
   onShare,
   onPhotoreal,
+  onUndo,
+  onRedo,
+  canUndo = false,
+  canRedo = false,
 }: StudioToolbarProps) {
   const { t } = useI18n();
 
@@ -74,10 +84,20 @@ export function StudioToolbar({
       }}
     >
       <div className="flex gap-[2px]">
-        <TBtn aria-label="undo">
+        <TBtn
+          aria-label={t("studio.undo")}
+          title={t("studio.undo")}
+          onClick={onUndo}
+          disabled={!canUndo || !onUndo}
+        >
           <Undo2 className="h-3.5 w-3.5" />
         </TBtn>
-        <TBtn aria-label="redo">
+        <TBtn
+          aria-label={t("studio.redo")}
+          title={t("studio.redo")}
+          onClick={onRedo}
+          disabled={!canRedo || !onRedo}
+        >
           <Redo2 className="h-3.5 w-3.5" />
         </TBtn>
       </div>
@@ -141,18 +161,21 @@ function TBtn({
   children,
   active = false,
   onClick,
+  disabled,
   ...rest
 }: React.ButtonHTMLAttributes<HTMLButtonElement> & { active?: boolean }) {
   return (
     <button
       type="button"
       onClick={onClick}
+      disabled={disabled}
       {...rest}
       className={cn(
         "inline-flex items-center gap-1.5 rounded-lg border-0 px-2.5 py-1.5 text-[12px] font-[inherit] transition-colors",
         active
           ? "text-white"
           : "text-white/55 hover:bg-white/5 hover:text-white",
+        disabled && "cursor-not-allowed opacity-35 hover:bg-transparent hover:text-white/55",
       )}
       style={
         active

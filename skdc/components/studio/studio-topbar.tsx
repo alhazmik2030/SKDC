@@ -1,5 +1,13 @@
 "use client";
 
+/**
+ * Studio top bar. Previously held a row of placeholder menu buttons
+ * (File/Edit/View/Camera/Lighting/Render/Help) with no handlers — those
+ * were removed because they shipped as no-ops and confused users. All real
+ * actions now live in StudioToolbar (camera/time/snapshot/share/photoreal)
+ * and the floating pills on the right edge (walls/hide/material).
+ */
+
 import * as React from "react";
 import Link from "next/link";
 import { X, Save, Loader2 } from "lucide-react";
@@ -53,14 +61,6 @@ export function StudioTopbar({
         {t("studio.title")}
       </span>
 
-      <MenuItem label={t("studio.menu.file")} />
-      <MenuItem label={t("studio.menu.edit")} />
-      <MenuItem label={t("studio.menu.view")} />
-      <MenuItem label={t("studio.menu.camera")} />
-      <MenuItem label={t("studio.menu.lighting")} />
-      <MenuItem label={t("studio.menu.render")} />
-      <MenuItem label={t("studio.menu.help")} />
-
       <div className="ms-auto flex items-center gap-2">
         <span
           className="inline-flex items-center gap-1 rounded-full border px-3 py-[3px] text-[11px] text-white/55"
@@ -94,13 +94,3 @@ export function StudioTopbar({
   );
 }
 
-function MenuItem({ label }: { label: string }) {
-  return (
-    <button
-      type="button"
-      className="cursor-pointer rounded-md px-2 py-[5px] text-[12px] text-white/55 transition-colors hover:bg-white/5 hover:text-white"
-    >
-      {label}
-    </button>
-  );
-}

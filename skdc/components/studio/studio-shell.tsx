@@ -126,6 +126,60 @@ export function StudioShell({
   const [hideWalls, setHideWalls] = React.useState(false);
   const [isSaving, startSaving] = React.useTransition();
   const [lastSavedAt, setLastSavedAt] = React.useState<number | null>(null);
+  const [snapshotRequest, setSnapshotRequest] = React.useState(0);
+
+  // ============================================================
+  // Undo/redo history. We keep `design` as the single source of truth and
+  // wrap mutating handlers with `mutateDesign`, which snapshots the previous
+  // state into `past` and clears the redo branch. Capped at 50 entries.
+  // ============================================================
+  const historyRef = React.useRef<{
+    past: DesignerState[];
+    future: DesignerState[];
+  }>({ past: [], future: [] });
+  const [canUndo, setCanUndo] = React.useState(false);
+  const [canRedo, setCanRedo] = React.useState(false);
+
+  const mutateDesign = React.useCallback(
+    (updater: (d: DesignerState) => DesignerState) => {
+      setDesign((d) => {
+        const next = updater(d);
+        if (next === d) return d;
+        const past = historyRef.current.past;
+        past.push(d);
+        if (past.length > 50) past.shift();
+        historyRef.current.future = [];
+        setCanUndo(true);
+        setCanRedo(false);
+        return next;
+      });
+    },
+    [],
+  );
+
+  const handleUndo = React.useCallback(() => {
+    setDesign((d) => {
+      const { past, future } = historyRef.current;
+      if (past.length === 0) return d;
+      const prev = past.pop()!;
+      future.push(d);
+      setCanUndo(past.length > 0);
+      setCanRedo(true);
+      return prev;
+    });
+  }, []);
+
+  const handleRedo = React.useCallback(() => {
+    setDesign((d) => {
+      const { past, future } = historyRef.current;
+      if (future.length === 0) return d;
+      const next = future.pop()!;
+      past.push(d);
+      setCanRedo(future.length > 0);
+      setCanUndo(true);
+      return next;
+    });
+  }, []);
 
   const handleAddTemplate = React.useCallback(
     (template: Template) => {
@@ -142,10 +196,10 @@ export function StudioShell({
         rotation: 0,
         color: getCategoryColor(template.category),
       };
-      setDesign((d) => ({ ...d, units: [...d.units, unit] }));
+      mutateDesign((d) => ({ ...d, units: [...d.units, unit] }));
       setSelectedId(unit.id);
     },
-    [],
+    [mutateDesign],
   );
 
   /**
@@ -169,37 +223,37 @@ export function StudioShell({
         color: getCategoryColor(template.category),
         glbUrl: template.glbUrl,
       };
-      setDesign((d) => ({ ...d, units: [...d.units, unit] }));
+      mutateDesign((d) => ({ ...d, units: [...d.units, unit] }));
       setSelectedId(unit.id);
     },
-    [],
+    [mutateDesign],
   );
 
   const handleUpdateSelected = React.useCallback(
     (patch: Partial<DesignerUnit>) => {
       if (!selectedId) return;
-      setDesign((d) => ({
+      mutateDesign((d) => ({
         ...d,
         units: d.units.map((u) =>
           u.id === selectedId ? { ...u, ...patch } : u,
         ),
       }));
     },
-    [selectedId],
+    [selectedId, mutateDesign],
   );
 
   const handleDeleteSelected = React.useCallback(() => {
     if (!selectedId) return;
-    setDesign((d) => ({
+    mutateDesign((d) => ({
       ...d,
       units: d.units.filter((u) => u.id !== selectedId),
     }));
     setSelectedId(null);
-  }, [selectedId]);
+  }, [selectedId, mutateDesign]);
 
   const handleRotateSelected = React.useCallback(() => {
     if (!selectedId) return;
-    setDesign((d) => ({
+    mutateDesign((d) => ({
       ...d,
       units: d.units.map((u) => {
         if (u.id !== selectedId) return u;
@@ -207,7 +261,7 @@ export function StudioShell({
         return { ...u, rotation: next };
       }),
     }));
-  }, [selectedId]);
+  }, [selectedId, mutateDesign]);
 
   /**
    * Material picker → design state. Walks every unit and stamps the chosen
@@ -218,7 +272,7 @@ export function StudioShell({
    */
   const handleApplyMaterial = React.useCallback(
     (materialId: string, scope: MaterialApplyScope) => {
-      setDesign((d) => {
+      mutateDesign((d) => {
         const selected = d.units.find((u) => u.id === selectedId) ?? null;
         return {
           ...d,
@@ -232,8 +286,65 @@ export function StudioShell({
         };
       });
     },
-    [selectedId],
+    [selectedId, mutateDesign],
   );
+
+  // ============================================================
+  // Toolbar handlers: snapshot, share, photoreal.
+  // ============================================================
+
+  /** Bumps the snapshot request counter; scene captures the canvas. */
+  const handleSnapshot = React.useCallback(() => {
+    setSnapshotRequest((n) => n + 1);
+  }, []);
+
+  /** Called by the Scene3D once the snapshot PNG is ready. Triggers a
+   * direct download so the designer keeps the file on their machine. */
+  const handleSnapshotReady = React.useCallback(
+    (dataUrl: string) => {
+      const a = document.createElement("a");
+      const safeName = project.name.replace(/[^\w؀-ۿ-]/g, "_").slice(0, 60);
+      a.href = dataUrl;
+      a.download = `${safeName}_${new Date().toISOString().slice(0, 10)}.png`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      toast.success(t("studio.snapshotSaved"));
+    },
+    [project.name, t],
+  );
+
+  /** Copies the current project URL to the clipboard so the designer can
+   * paste it into chat / email. Falls back to a "select & copy" approach
+   * when the secure clipboard API isn't available (insecure context). */
+  const handleShare = React.useCallback(async () => {
+    const url = typeof window !== "undefined" ? window.location.href : "";
+    try {
+      if (navigator?.clipboard?.writeText) {
+        await navigator.clipboard.writeText(url);
+        toast.success(t("studio.shareLinkCopied"));
+      } else {
+        const ta = document.createElement("textarea");
+        ta.value = url;
+        ta.style.position = "fixed";
+        ta.style.left = "-9999px";
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand("copy");
+        document.body.removeChild(ta);
+        toast.success(t("studio.shareLinkCopied"));
+      }
+    } catch (e) {
+      toast.error((e as Error).message || t("studio.shareFailed"));
+    }
+  }, [t]);
+
+  /** Photoreal pipeline is on the roadmap (cloud-rendered final image).
+   * For now we tell the user it's coming so they don't think the button
+   * silently failed. */
+  const handlePhotoreal = React.useCallback(() => {
+    toast.message(t("studio.photorealSoon"));
+  }, [t]);
 
   const handleSave = React.useCallback(() => {
     startSaving(async () => {
@@ -255,6 +366,35 @@ export function StudioShell({
     }, 30_000);
     return () => window.clearTimeout(id);
   }, [design, handleSave]);
+
+  // Keyboard shortcuts: Ctrl/Cmd+Z = undo, Ctrl/Cmd+Shift+Z or Ctrl+Y = redo,
+  // Ctrl/Cmd+S = save. Skipped while focus is in an editable element.
+  React.useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      const tgt = e.target as HTMLElement | null;
+      const editable =
+        tgt &&
+        (tgt.tagName === "INPUT" ||
+          tgt.tagName === "TEXTAREA" ||
+          tgt.isContentEditable);
+      if (editable) return;
+      const cmd = e.ctrlKey || e.metaKey;
+      if (!cmd) return;
+      const k = e.key.toLowerCase();
+      if (k === "z" && !e.shiftKey) {
+        e.preventDefault();
+        handleUndo();
+      } else if ((k === "z" && e.shiftKey) || k === "y") {
+        e.preventDefault();
+        handleRedo();
+      } else if (k === "s") {
+        e.preventDefault();
+        handleSave();
+      }
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [handleUndo, handleRedo, handleSave]);
 
   const selectedUnit =
     design.units.find((u) => u.id === selectedId) ?? null;
@@ -291,6 +431,9 @@ export function StudioShell({
           walls={walls}
           island={island}
           hideWalls={hideWalls}
+          cameraPreset={camera}
+          snapshotRequest={snapshotRequest}
+          onSnapshot={handleSnapshotReady}
         />
       </div>
 
@@ -306,9 +449,13 @@ export function StudioShell({
         camera={camera}
         onCamera={setCamera}
         time={time}
-        onSnapshot={() => toast.message(t("studio.snapshot"))}
-        onShare={() => toast.message(t("studio.share"))}
-        onPhotoreal={() => toast.message(t("studio.photoreal"))}
+        onSnapshot={handleSnapshot}
+        onShare={handleShare}
+        onPhotoreal={handlePhotoreal}
+        onUndo={handleUndo}
+        onRedo={handleRedo}
+        canUndo={canUndo}
+        canRedo={canRedo}
       />
 
       {/* === Center floating title pill === */}
@@ -529,7 +676,9 @@ export function StudioShell({
         <StudioPalette
           category={category}
           templates={templates}
+          glbTemplates={glbTemplates}
           onAdd={handleAddTemplate}
+          onAddGlb={handleAddGlbTemplate}
         />
       ) : null}
 

@@ -7,6 +7,7 @@ import {
   ArrowRight,
   Footprints,
   RotateCcw,
+  Sparkles,
 } from "lucide-react";
 import { useI18n } from "@/components/i18n-provider";
 import { cn } from "@/lib/utils";
@@ -21,6 +22,7 @@ const CAMERA_DEFS: Array<{
   Icon: React.ComponentType<{ className?: string }>;
 }> = [
   { id: "perspective", labelKey: "studio.camera.perspective", Icon: Box },
+  { id: "hero", labelKey: "studio.camera.hero", Icon: Sparkles },
   { id: "top", labelKey: "studio.camera.top", Icon: ArrowDown },
   { id: "front", labelKey: "studio.camera.front", Icon: ArrowRight },
   { id: "walk", labelKey: "studio.camera.walk", Icon: Footprints },
