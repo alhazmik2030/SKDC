@@ -813,3 +813,49 @@ model FactoryOrderEvent {
   @@index([orderId])
   @@index([occurredAt])
 }
+
+// =====================================================================
+// KITCHEN TEMPLATES — GLB MODEL LIBRARY
+// Pre-authored GLB cabinets/appliances/accessories sourced from Sketchfab
+// and other libraries. These sit alongside the procedural `Template` table —
+// procedural templates handle resizable boxy cabinets, while KitchenTemplate
+// drives high-detail appliance/decor models in the 3D scene.
+// Global (not workspace-scoped) so every workshop sees the same library.
+// =====================================================================
+model KitchenTemplate {
+  id              String   @id @default(cuid())
+
+  // Identity
+  name            String
+  nameAr          String?
+  description     String?  @db.Text
+  // Matches the DesignerUnit category union (string for forward compat with
+  // categories that aren't part of TemplateCategory yet).
+  category        String
+
+  // File
+  glbUrl          String   // Supabase Storage public URL
+  glbSizeBytes    Int
+  triangleCount   Int
+  thumbnailUrl    String?
+
+  // Default dimensions in mm (used when the designer drops the template in)
+  defaultWidth    Int
+  defaultHeight   Int
+  defaultDepth    Int
+
+  // Licensing
+  license         String   @default("CC-BY-4.0")
+  attribution     String?
+  sourceUrl       String?
+
+  // Visibility
+  published       Boolean  @default(false)
+  featured        Boolean  @default(false)
+
+  // Tracking
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([category, published])
+}

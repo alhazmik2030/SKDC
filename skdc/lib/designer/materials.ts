@@ -467,6 +467,155 @@ const PRESETS_INTERNAL: MaterialPreset[] = [
         envMapIntensity: 1.2,
       }),
   },
+  // ============================================================
+  // Extended palette — added for the full designer experience.
+  // ============================================================
+  {
+    id: "maple",
+    nameKey: "material.preset.maple",
+    swatch: "#d8b87a",
+    build: (T) => {
+      const map = getCachedTexture("wood:maple", () => makeWoodCanvas("#e1c08c", "#856334"), [2, 1]);
+      const m = new T.MeshPhysicalMaterial({ color: 0xffffff, roughness: 0.48, metalness: 0, clearcoat: 0.45, clearcoatRoughness: 0.3, envMapIntensity: 1.2 });
+      if (map) m.map = map;
+      return m;
+    },
+  },
+  {
+    id: "mahogany",
+    nameKey: "material.preset.mahogany",
+    swatch: "#5a2a1a",
+    build: (T) => {
+      const map = getCachedTexture("wood:mahogany", () => makeWoodCanvas("#6a3020", "#2a0d05"), [2, 1]);
+      const m = new T.MeshPhysicalMaterial({ color: 0xffffff, roughness: 0.42, metalness: 0, clearcoat: 0.55, clearcoatRoughness: 0.22, envMapIntensity: 1.25 });
+      if (map) m.map = map;
+      return m;
+    },
+  },
+  {
+    id: "wenge",
+    nameKey: "material.preset.wenge",
+    swatch: "#2c1d14",
+    build: (T) => {
+      const map = getCachedTexture("wood:wenge", () => makeWoodCanvas("#332218", "#0d0805"), [2, 1]);
+      const m = new T.MeshPhysicalMaterial({ color: 0xffffff, roughness: 0.55, metalness: 0, clearcoat: 0.4, clearcoatRoughness: 0.3, envMapIntensity: 1.15 });
+      if (map) m.map = map;
+      return m;
+    },
+  },
+  {
+    id: "bamboo",
+    nameKey: "material.preset.bamboo",
+    swatch: "#c6a665",
+    build: (T) => {
+      const map = getCachedTexture("wood:bamboo", () => makeWoodCanvas("#d4b478", "#7a5c2e"), [3, 1]);
+      const m = new T.MeshPhysicalMaterial({ color: 0xffffff, roughness: 0.5, metalness: 0, clearcoat: 0.35, clearcoatRoughness: 0.3, envMapIntensity: 1.15 });
+      if (map) m.map = map;
+      return m;
+    },
+  },
+  {
+    id: "navy-blue",
+    nameKey: "material.preset.navyBlue",
+    swatch: "#1a2942",
+    build: (T) =>
+      new T.MeshPhysicalMaterial({ color: 0x1a2942, roughness: 0.28, metalness: 0.08, clearcoat: 0.65, clearcoatRoughness: 0.15, envMapIntensity: 1.3 }),
+  },
+  {
+    id: "sage-green",
+    nameKey: "material.preset.sageGreen",
+    swatch: "#8a9e7c",
+    build: (T) =>
+      new T.MeshPhysicalMaterial({ color: 0x8a9e7c, roughness: 0.4, metalness: 0.04, clearcoat: 0.5, clearcoatRoughness: 0.2, envMapIntensity: 1.15 }),
+  },
+  {
+    id: "terracotta",
+    nameKey: "material.preset.terracotta",
+    swatch: "#b65a3a",
+    build: (T) =>
+      new T.MeshPhysicalMaterial({ color: 0xb65a3a, roughness: 0.5, metalness: 0.02, clearcoat: 0.3, clearcoatRoughness: 0.3, envMapIntensity: 1.1 }),
+  },
+  {
+    id: "charcoal",
+    nameKey: "material.preset.charcoal",
+    swatch: "#2a2a2e",
+    build: (T) =>
+      new T.MeshPhysicalMaterial({ color: 0x2a2a2e, roughness: 0.35, metalness: 0.12, clearcoat: 0.55, clearcoatRoughness: 0.18, envMapIntensity: 1.2 }),
+  },
+  {
+    id: "cream-glossy",
+    nameKey: "material.preset.creamGlossy",
+    swatch: "#f0e6d2",
+    build: (T) =>
+      new T.MeshPhysicalMaterial({ color: 0xf0e6d2, roughness: 0.18, metalness: 0.06, clearcoat: 0.75, clearcoatRoughness: 0.08, envMapIntensity: 1.35 }),
+  },
+  {
+    id: "marble-emperador",
+    nameKey: "material.preset.marbleEmperador",
+    swatch: "#5a3a2a",
+    build: (T) => {
+      const map = getCachedTexture("marble:emperador", () => makeMarbleCanvas("#5a3a2a", "#d4b87a", 5), [1, 1]);
+      const m = new T.MeshPhysicalMaterial({ color: 0xffffff, roughness: 0.16, metalness: 0.02, clearcoat: 0.5, clearcoatRoughness: 0.1, envMapIntensity: 1.35 });
+      if (map) m.map = map;
+      return m;
+    },
+  },
+  {
+    id: "granite-white",
+    nameKey: "material.preset.graniteWhite",
+    swatch: "#ededed",
+    build: (T) => {
+      const map = getCachedTexture("granite:white", () => makeGraniteCanvas("#ededed"), [2, 2]);
+      const m = new T.MeshPhysicalMaterial({ color: 0xffffff, roughness: 0.25, metalness: 0.06, clearcoat: 0.4, clearcoatRoughness: 0.18, envMapIntensity: 1.25 });
+      if (map) m.map = map;
+      return m;
+    },
+  },
+  {
+    id: "travertine",
+    nameKey: "material.preset.travertine",
+    swatch: "#d6c4a4",
+    build: (T) => {
+      const map = getCachedTexture("stone:travertine", () => makeMarbleCanvas("#d6c4a4", "#8a6f44", 2), [1, 1]);
+      const m = new T.MeshPhysicalMaterial({ color: 0xffffff, roughness: 0.45, metalness: 0, clearcoat: 0.2, clearcoatRoughness: 0.3, envMapIntensity: 1.15 });
+      if (map) m.map = map;
+      return m;
+    },
+  },
+  {
+    id: "brushed-steel",
+    nameKey: "material.preset.brushedSteel",
+    swatch: "#bdbdbd",
+    build: (T) => {
+      const m = new T.MeshPhysicalMaterial({ color: 0xbdbdbd, roughness: 0.28, metalness: 0.95, clearcoat: 0.25, clearcoatRoughness: 0.2, envMapIntensity: 1.5 });
+      if ("anisotropy" in m) {
+        (m as THREE.MeshPhysicalMaterial).anisotropy = 0.6;
+        (m as THREE.MeshPhysicalMaterial).anisotropyRotation = 0;
+      }
+      return m;
+    },
+  },
+  {
+    id: "brass-aged",
+    nameKey: "material.preset.brassAged",
+    swatch: "#b5894a",
+    build: (T) =>
+      new T.MeshPhysicalMaterial({ color: 0xb5894a, roughness: 0.4, metalness: 0.85, clearcoat: 0.2, clearcoatRoughness: 0.3, envMapIntensity: 1.4 }),
+  },
+  {
+    id: "copper-brushed",
+    nameKey: "material.preset.copperBrushed",
+    swatch: "#b87333",
+    build: (T) =>
+      new T.MeshPhysicalMaterial({ color: 0xb87333, roughness: 0.35, metalness: 0.9, clearcoat: 0.25, clearcoatRoughness: 0.22, envMapIntensity: 1.45 }),
+  },
+  {
+    id: "frosted-glass",
+    nameKey: "material.preset.frostedGlass",
+    swatch: "#e8edf2",
+    build: (T) =>
+      new T.MeshPhysicalMaterial({ color: 0xffffff, roughness: 0.35, metalness: 0, transmission: 0.85, opacity: 0.5, transparent: true, thickness: 0.02, ior: 1.45, envMapIntensity: 1.2 }),
+  },
 ];
 
 export const MATERIAL_PRESETS: MaterialPreset[] = PRESETS_INTERNAL;

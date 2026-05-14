@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import type { Template } from "@prisma/client";
+import type { KitchenTemplate, Template } from "@prisma/client";
 import { useI18n } from "@/components/i18n-provider";
 import type { StudioCategory } from "./studio-types";
 
@@ -11,19 +11,31 @@ const GLASS_STRONG = "rgba(8,8,12,0.92)";
 export interface StudioPaletteProps {
   category: StudioCategory;
   templates: Template[];
+  glbTemplates: KitchenTemplate[];
   onAdd: (tpl: Template) => void;
+  onAddGlb: (tpl: KitchenTemplate) => void;
 }
 
 export function StudioPalette({
   category,
   templates,
+  glbTemplates,
   onAdd,
+  onAddGlb,
 }: StudioPaletteProps) {
   const { t } = useI18n();
 
   const filtered = React.useMemo(
     () => templates.filter((t) => t.category === category),
     [templates, category],
+  );
+
+  // GLB templates are keyed on a stringified category so library entries
+  // for categories outside the procedural TemplateCategory union (future)
+  // still show up under the right rail tab.
+  const filteredGlb = React.useMemo(
+    () => glbTemplates.filter((t) => t.category === category),
+    [glbTemplates, category],
   );
 
   return (
@@ -41,49 +53,107 @@ export function StudioPalette({
       <h3 className="mb-2.5 flex items-center justify-between text-[12px] font-semibold">
         <span>{t(`template.category.${category}`)}</span>
         <span className="text-[10px] font-normal text-white/55">
-          {filtered.length} {t("designer.palette.title")}
+          {filtered.length + filteredGlb.length} {t("designer.palette.title")}
         </span>
       </h3>
 
-      {filtered.length === 0 ? (
+      {filtered.length === 0 && filteredGlb.length === 0 ? (
         <div className="px-2 py-8 text-center text-[11px] text-white/55">
           {t("empty.templates.category")}
         </div>
       ) : (
-        <div className="grid grid-cols-2 gap-1.5">
-          {filtered.map((tpl) => (
-            <button
-              key={tpl.id}
-              type="button"
-              onClick={() => onAdd(tpl)}
-              className="cursor-pointer rounded-[10px] border p-1.5 text-start transition-all hover:bg-[rgba(167,139,250,0.08)]"
-              style={{
-                background: "rgba(255,255,255,0.03)",
-                borderColor: BORDER,
-              }}
-            >
-              <div
-                className="relative mb-1 h-12 rounded-md"
-                style={{
-                  background:
-                    "linear-gradient(135deg, #d6b48a, #b7935d)",
-                }}
-              >
-                <span
-                  aria-hidden
-                  className="absolute left-1/2 top-[60%] block h-[2px] w-1/2 -translate-x-1/2 rounded-[1px]"
-                  style={{ background: "rgba(70,50,22,0.8)" }}
-                />
+        <>
+          {filtered.length > 0 ? (
+            <div className="grid grid-cols-2 gap-1.5">
+              {filtered.map((tpl) => (
+                <button
+                  key={tpl.id}
+                  type="button"
+                  onClick={() => onAdd(tpl)}
+                  className="cursor-pointer rounded-[10px] border p-1.5 text-start transition-all hover:bg-[rgba(167,139,250,0.08)]"
+                  style={{
+                    background: "rgba(255,255,255,0.03)",
+                    borderColor: BORDER,
+                  }}
+                >
+                  <div
+                    className="relative mb-1 h-12 rounded-md"
+                    style={{
+                      background:
+                        "linear-gradient(135deg, #d6b48a, #b7935d)",
+                    }}
+                  >
+                    <span
+                      aria-hidden
+                      className="absolute left-1/2 top-[60%] block h-[2px] w-1/2 -translate-x-1/2 rounded-[1px]"
+                      style={{ background: "rgba(70,50,22,0.8)" }}
+                    />
+                  </div>
+                  <div className="text-[10px] font-semibold leading-tight">
+                    {tpl.name}
+                  </div>
+                  <div className="mt-px font-mono text-[8px] text-white/55">
+                    {tpl.defaultWidth}×{tpl.defaultHeight}×{tpl.defaultDepth}
+                  </div>
+                </button>
+              ))}
+            </div>
+          ) : null}
+
+          {filteredGlb.length > 0 ? (
+            <>
+              <div className="mb-1 mt-3 flex items-center justify-between text-[10px] font-semibold uppercase tracking-wide text-white/65">
+                <span>قوالب من المكتبة</span>
+                <span className="text-[9px] font-normal text-white/45">
+                  {filteredGlb.length}
+                </span>
               </div>
-              <div className="text-[10px] font-semibold leading-tight">
-                {tpl.name}
+              <div className="grid grid-cols-2 gap-1.5">
+                {filteredGlb.map((tpl) => (
+                  <button
+                    key={tpl.id}
+                    type="button"
+                    onClick={() => onAddGlb(tpl)}
+                    className="cursor-pointer rounded-[10px] border p-1.5 text-start transition-all hover:bg-[rgba(56,189,248,0.10)]"
+                    style={{
+                      background: "rgba(255,255,255,0.03)",
+                      borderColor: BORDER,
+                    }}
+                  >
+                    <div
+                      className="relative mb-1 h-12 overflow-hidden rounded-md"
+                      style={{
+                        background: tpl.thumbnailUrl
+                          ? `url(${tpl.thumbnailUrl}) center/cover, linear-gradient(135deg, #2c3e50, #4a6fa5)`
+                          : "linear-gradient(135deg, #2c3e50, #4a6fa5)",
+                      }}
+                    >
+                      {!tpl.thumbnailUrl ? (
+                        <span className="absolute inset-0 grid place-items-center text-[8px] font-bold text-white/70">
+                          GLB
+                        </span>
+                      ) : null}
+                      {tpl.featured ? (
+                        <span
+                          aria-hidden
+                          className="absolute end-0.5 top-0.5 rounded-sm bg-amber-300 px-1 text-[7px] font-black text-black"
+                        >
+                          ★
+                        </span>
+                      ) : null}
+                    </div>
+                    <div className="text-[10px] font-semibold leading-tight">
+                      {tpl.nameAr ?? tpl.name}
+                    </div>
+                    <div className="mt-px font-mono text-[8px] text-white/55">
+                      {tpl.defaultWidth}×{tpl.defaultHeight}×{tpl.defaultDepth}
+                    </div>
+                  </button>
+                ))}
               </div>
-              <div className="mt-px font-mono text-[8px] text-white/55">
-                {tpl.defaultWidth}×{tpl.defaultHeight}×{tpl.defaultDepth}
-              </div>
-            </button>
-          ))}
-        </div>
+            </>
+          ) : null}
+        </>
       )}
     </div>
   );

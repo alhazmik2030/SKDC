@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { useFrame, type ThreeEvent } from "@react-three/fiber";
-import { Edges, Html } from "@react-three/drei";
+import { Edges, Html, useGLTF } from "@react-three/drei";
 import * as THREE from "three";
 import { RoundedBoxGeometry } from "three/examples/jsm/geometries/RoundedBoxGeometry.js";
 import type { DesignerUnit } from "@/components/designer/types";
@@ -11,6 +11,10 @@ import {
   getPresetById,
   presetIdForUnit,
 } from "@/lib/designer/materials";
+import {
+  getLibraryMaterial,
+  type LibraryMaterial,
+} from "@/lib/designer/material-library";
 
 const MM = 0.001; // convert mm → meters for Three.js scene units
 
@@ -79,6 +83,23 @@ function getRoundedGeo(
 // ============================================================
 // Material resolution — preset-aware with safe fallbacks.
 // ============================================================
+function buildLibraryMaterial(entry: LibraryMaterial): THREE.MeshPhysicalMaterial {
+  const m = new THREE.MeshPhysicalMaterial({
+    color: new THREE.Color(entry.color),
+    roughness: entry.roughness,
+    metalness: entry.metalness,
+    envMapIntensity: 1.2,
+  });
+  if (entry.clearcoat != null) m.clearcoat = entry.clearcoat;
+  if (entry.clearcoatRoughness != null)
+    m.clearcoatRoughness = entry.clearcoatRoughness;
+  if (entry.sheen != null) {
+    m.sheen = entry.sheen;
+    m.sheenColor = new THREE.Color("#ffffff");
+  }
+  return m;
+}
+
 function useUnitMaterials(unit: DesignerUnit, selected?: boolean) {
   return React.useMemo(() => {
     // Selection override: keep the chunky purple body but still PBR so it
@@ -101,6 +122,20 @@ function useUnitMaterials(unit: DesignerUnit, selected?: boolean) {
       return { body: sel, facade, presetId: "__selected__" };
     }
 
+    // Library override — the new expanded material picker wins over the
+    // legacy color-based heuristic when the designer has explicitly applied
+    // a finish.
+    if (unit.materialId) {
+      const entry = getLibraryMaterial(unit.materialId);
+      if (entry) {
+        const body = buildLibraryMaterial(entry);
+        const facade = buildLibraryMaterial(entry);
+        // Slight body/facade differentiation so doors read as the "feature".
+        body.envMapIntensity = (body.envMapIntensity ?? 1) * 0.9;
+        return { body, facade, presetId: `lib:${entry.id}` };
+      }
+    }
+
     const presetId = presetIdForUnit(unit);
     const preset = getPresetById(presetId);
 
@@ -115,7 +150,7 @@ function useUnitMaterials(unit: DesignerUnit, selected?: boolean) {
     // Unknown color → tinted fallback so we never flat-shade.
     const fallback = buildFallbackMaterial(unit.color || "#cdcdcd");
     return { body: fallback, facade: fallback.clone(), presetId: "__fallback__" };
-  }, [unit.color, unit.category, selected]);
+  }, [unit.color, unit.category, unit.materialId, selected]);
 }
 
 /**
@@ -159,6 +194,12 @@ export function Unit3D({ unit, options, selected, onSelect, overrideTransform }:
     ? [0, overrideTransform.rotationY, 0]
     : [0, ((unit.rotation ?? 0) * Math.PI) / 180, 0];
 
+  // If the unit has a GLB URL we render the imported model (auto-scaled to
+  // the unit's box) instead of the procedural cabinet/appliance branches.
+  // The procedural renderer stays the default — GLB rendering is purely
+  // additive so existing kitchens are unaffected.
+  const hasGlb = !!unit.glbUrl;
+
   return (
     <group
       position={groupPosition}
@@ -168,8 +209,12 @@ export function Unit3D({ unit, options, selected, onSelect, overrideTransform }:
         onSelect?.(unit.id);
       }}
     >
-      {/* === APPLIANCE: render with metallic look + placeholder mesh === */}
-      {isAppliance ? (
+      {hasGlb ? (
+        <React.Suspense fallback={<LoadingProxy width={w} height={h} depth={d} />}>
+          <GLBUnit url={unit.glbUrl!} width={w} height={h} depth={d} />
+        </React.Suspense>
+      ) : isAppliance ? (
+        /* === APPLIANCE: render with metallic look + placeholder mesh === */
         <ApplianceBox width={w} height={h} depth={d} type={options?.appliance} selected={selected} />
       ) : (
         <>
@@ -1110,4 +1155,102 @@ function useDrawerAnimation(open: boolean) {
   });
 
   return progress;
+}
+
+// ============================================================
+// GLB model renderer
+// ============================================================
+/**
+ * Renders an imported GLB asset auto-scaled to (width × height × depth) in
+ * meters. The model's bounding box is measured once on first load, then we
+ * apply per-axis scale factors so the asset always fits the unit's slot.
+ *
+ * We deliberately CLONE the GLB scene so each unit instance has its own
+ * transform graph — drei's `useGLTF` caches the parsed asset, so multiple
+ * units referencing the same URL share GPU memory but get independent
+ * transforms.
+ */
+function GLBUnit({
+  url,
+  width,
+  height,
+  depth,
+}: {
+  url: string;
+  width: number;
+  height: number;
+  depth: number;
+}) {
+  const gltf = useGLTF(url);
+  // Clone so concurrent units can hold the same parsed asset without
+  // stepping on each other's transforms.
+  const scene = React.useMemo(() => gltf.scene.clone(true), [gltf.scene]);
+
+  // Measure the cloned scene's bounding box and compute the scale that
+  // makes it fit exactly inside (width × height × depth). We also recenter
+  // the model so it sits on the floor with its base aligned to y=0 in
+  // local space.
+  const { scale, offset } = React.useMemo(() => {
+    const box = new THREE.Box3().setFromObject(scene);
+    const size = new THREE.Vector3();
+    const center = new THREE.Vector3();
+    box.getSize(size);
+    box.getCenter(center);
+
+    // Avoid division by zero on degenerate axes.
+    const sx = size.x > 1e-6 ? width / size.x : 1;
+    const sy = size.y > 1e-6 ? height / size.y : 1;
+    const sz = size.z > 1e-6 ? depth / size.z : 1;
+
+    // Offset to recenter horizontally + sit bottom on Y=0. The wrapping
+    // <group> already places (0,0,0) at the unit centre, so we translate
+    // by -center.x/-center.z to centre, and by (size.y/2 - center.y) so
+    // the bottom of the bbox lands on y=0 in local space.
+    return {
+      scale: [sx, sy, sz] as [number, number, number],
+      offset: [-center.x, size.y / 2 - center.y, -center.z] as [
+        number,
+        number,
+        number,
+      ],
+    };
+  }, [scene, width, height, depth]);
+
+  // Castshadow + receiveshadow for every mesh so the model integrates with
+  // the existing lighting rig.
+  React.useEffect(() => {
+    scene.traverse((child) => {
+      if ((child as THREE.Mesh).isMesh) {
+        const m = child as THREE.Mesh;
+        m.castShadow = true;
+        m.receiveShadow = true;
+      }
+    });
+  }, [scene]);
+
+  return (
+    <group position={[0, -height / 2, 0]}>
+      <group scale={scale} position={offset}>
+        <primitive object={scene} />
+      </group>
+    </group>
+  );
+}
+
+/** Lightweight placeholder while the GLB is still streaming in. */
+function LoadingProxy({
+  width,
+  height,
+  depth,
+}: {
+  width: number;
+  height: number;
+  depth: number;
+}) {
+  return (
+    <mesh>
+      <boxGeometry args={[width, height, depth]} />
+      <meshStandardMaterial color="#222831" transparent opacity={0.35} />
+    </mesh>
+  );
 }

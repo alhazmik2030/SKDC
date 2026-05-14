@@ -32,6 +32,19 @@ export type DesignerUnit = {
   wallOffset?: number | null;
   /** Height from floor to bottom of the unit (mm). 0 for base cabinets. */
   baseHeight?: number;
+  /**
+   * Optional reference to an entry in `lib/designer/material-library.ts`.
+   * Overrides the unit's `color` for body/facade rendering when set so the
+   * designer can apply a curated PBR finish (wood, stone, metal, paint).
+   * Undefined ⇒ fall back to the legacy color-based heuristic.
+   */
+  materialId?: string;
+  /**
+   * Optional GLB model URL. When set, the 3D unit renders the imported
+   * GLTF/GLB asset auto-scaled to width × height × depth instead of the
+   * procedural cabinet geometry. Used for high-detail Sketchfab / library models.
+   */
+  glbUrl?: string | null;
 };
 
 export type DesignerRoom = {
