@@ -81,6 +81,32 @@ export async function updateProject(id: string, raw: unknown) {
   return project;
 }
 
+const RoomInput = z.object({
+  roomWidth: z.coerce.number().positive().max(20_000),
+  roomDepth: z.coerce.number().positive().max(20_000),
+  roomHeight: z.coerce.number().positive().max(10_000),
+});
+
+export async function updateProjectRoom(id: string, raw: unknown) {
+  const workspaceId = await requireWorkspaceId();
+  const parsed = RoomInput.parse(raw);
+  const existing = await db.project.findFirst({
+    where: { id, workspaceId },
+    select: { id: true },
+  });
+  if (!existing) throw new Error("NOT_FOUND");
+  const project = await db.project.update({
+    where: { id },
+    data: {
+      roomWidth: parsed.roomWidth,
+      roomDepth: parsed.roomDepth,
+      roomHeight: parsed.roomHeight,
+    },
+  });
+  revalidatePath(`/dashboard/projects/${id}/studio`);
+  return project;
+}
+
 export async function deleteProject(id: string) {
   const workspaceId = await requireWorkspaceId();
   const existing = await db.project.findFirst({ where: { id, workspaceId } });
