@@ -139,7 +139,7 @@ export interface Scene3DProps {
    * Drag-on-canvas — fires when the user moves a unit via TransformControls.
    * The shell snaps/clamps the proposed coordinates before committing them.
    */
-  onUnitTransform?: (unitId: string, next: { x: number; y: number }) => void;
+  onUnitTransform?: (unitId: string, next: { x: number; y: number; baseHeight?: number }) => void;
 }
 
 export function Scene3D({
@@ -304,7 +304,7 @@ function SceneContents({
   cameraPreset: SceneCameraPreset;
   snapshotRequest?: number;
   onSnapshot?: (dataUrl: string) => void;
-  onUnitTransform?: (unitId: string, next: { x: number; y: number }) => void;
+  onUnitTransform?: (unitId: string, next: { x: number; y: number; baseHeight?: number }) => void;
 }) {
   const tod = TOD_PRESETS[timeOfDay];
   const useWizardWalls = !!(walls && walls.length > 0);

@@ -84,11 +84,16 @@ export function ProjectFormDialog({
       z.object({
         name: z.string().min(2, t("form.customer.nameRequired")),
         customerId: z.string().optional(),
+        customerPhone: z.string().optional(),
         status: z.nativeEnum(ProjectStatus).default("DRAFT"),
         designStyle: z.nativeEnum(DesignStyle).optional().or(z.literal("")),
         roomWidth: z.coerce.number().positive().optional().or(z.literal("")),
-        roomDepth: z.coerce.number().positive().optional().or(z.literal("")),
         roomHeight: z.coerce.number().positive().optional().or(z.literal("")),
+        wallThickness: z.coerce
+          .number()
+          .positive()
+          .optional()
+          .or(z.literal("")),
         notes: z.string().optional(),
       }),
     [t],
@@ -104,11 +109,12 @@ export function ProjectFormDialog({
     defaultValues: {
       name: project?.name ?? "",
       customerId: project?.customerId ?? "",
+      customerPhone: "",
       status: project?.status ?? "DRAFT",
       designStyle: project?.designStyle ?? "",
       roomWidth: project?.roomWidth ?? undefined,
-      roomDepth: project?.roomDepth ?? undefined,
       roomHeight: project?.roomHeight ?? undefined,
+      wallThickness: 80,
       notes: project?.notes ?? "",
     },
   });
@@ -119,10 +125,15 @@ export function ProjectFormDialog({
         const payload = {
           ...values,
           customerId: values.customerId || null,
+          customerPhone: values.customerPhone || null,
           designStyle: values.designStyle || null,
           roomWidth: values.roomWidth === "" ? null : values.roomWidth,
-          roomDepth: values.roomDepth === "" ? null : values.roomDepth,
+          // Depth is no longer asked in the dialog — wall lengths come from
+          // the wizard. Keep it null so existing DB rows stay valid.
+          roomDepth: null,
           roomHeight: values.roomHeight === "" ? null : values.roomHeight,
+          wallThickness:
+            values.wallThickness === "" ? 80 : values.wallThickness,
         };
         if (isEdit && project) {
           await updateProject(project.id, payload);
@@ -244,27 +255,43 @@ export function ProjectFormDialog({
             </Select>
           </Field>
 
+          {/* Customer phone — captured here so the workshop doesn't lose the
+              contact when a freshly-typed customer hasn't been added yet. */}
+          <Field label="رقم جوال العميل">
+            <Input
+              type="tel"
+              dir="ltr"
+              inputMode="tel"
+              placeholder="+9665XXXXXXXX"
+              {...form.register("customerPhone")}
+            />
+          </Field>
+
           <div>
             <label className="mb-1.5 block text-xs font-medium text-muted-foreground">
-              {t("form.project.dimensions")}
+              أبعاد المطبخ (مم) + سماكة الجدار
             </label>
             <div className="grid grid-cols-3 gap-2">
               <Input
                 type="number"
-                placeholder={t("form.project.width")}
+                placeholder={"عرض / طول الجدار"}
                 {...form.register("roomWidth")}
               />
               <Input
                 type="number"
-                placeholder={t("form.project.depth")}
-                {...form.register("roomDepth")}
+                placeholder={"ارتفاع الجدار"}
+                {...form.register("roomHeight")}
               />
               <Input
                 type="number"
-                placeholder={t("form.project.height")}
-                {...form.register("roomHeight")}
+                placeholder="سماكة الجدار (80)"
+                {...form.register("wallThickness")}
               />
             </div>
+            <p className="mt-1.5 text-[10px] text-muted-foreground">
+              عدد الجدران واتجاهها يُحدَّد في ويزرد الستديو بعد إنشاء المشروع.
+              السماكة الافتراضية 80 مم وتقدر تغيّرها.
+            </p>
           </div>
 
           <Field label={t("common.notes")}>

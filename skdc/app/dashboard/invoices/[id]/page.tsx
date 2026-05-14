@@ -112,7 +112,7 @@ export default async function InvoicePage({
             <div className="mt-1 font-semibold">{invoice.project.name}</div>
             {invoice.project.roomWidth ? (
               <div className="font-mono text-xs text-zinc-600">
-                الغرفة: {invoice.project.roomWidth}×{invoice.project.roomDepth}×
+                المطبخ: {invoice.project.roomWidth}×{invoice.project.roomDepth}×
                 {invoice.project.roomHeight} مم
               </div>
             ) : null}

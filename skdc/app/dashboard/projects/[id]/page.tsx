@@ -127,7 +127,7 @@ export default async function ProjectDetailPage({
       {/* Room dims */}
       {project.roomWidth || project.roomDepth || project.roomHeight ? (
         <div className="glass mt-8 rounded-2xl p-6">
-          <h3 className="mb-3 font-bold text-gradient">أبعاد الغرفة</h3>
+          <h3 className="mb-3 font-bold text-gradient">أبعاد المطبخ</h3>
           <div className="grid grid-cols-3 gap-4 text-center">
             <Dim label="العرض" value={project.roomWidth} />
             <Dim label="العمق" value={project.roomDepth} />

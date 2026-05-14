@@ -299,7 +299,7 @@ export function StudioShell({
    * wall-driven transform stops overriding the mouse position.
    */
   const handleUnitTransform = React.useCallback(
-    (unitId: string, next: { x: number; y: number }) => {
+    (unitId: string, next: { x: number; y: number; baseHeight?: number }) => {
       mutateDesign((d) => {
         const dragged = d.units.find((u) => u.id === unitId);
         if (!dragged) return d;
@@ -326,6 +326,16 @@ export function StudioShell({
           d.room,
           next,
         );
+        // Vertical lift snap — 0 mm (floor) and 1400 mm (upper-cabinet ledge)
+        // are the two natural stops, so we soft-snap baseHeight within 50 mm.
+        let bh = next.baseHeight;
+        if (bh != null) {
+          if (Math.abs(bh) < 50) bh = 0;
+          else if (Math.abs(bh - 1400) < 80) bh = 1400;
+          // Clamp to room height minus unit height so it never pokes through.
+          const maxLift = Math.max(0, d.room.height - dragged.height);
+          bh = Math.max(0, Math.min(bh, maxLift));
+        }
         return {
           ...d,
           units: d.units.map((u) =>
@@ -334,6 +344,7 @@ export function StudioShell({
                   ...u,
                   x: snapped.x,
                   y: snapped.y,
+                  baseHeight: bh ?? u.baseHeight,
                   wallId: null,
                   wallOffset: null,
                 }

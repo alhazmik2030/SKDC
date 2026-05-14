@@ -26,13 +26,16 @@ import { SizePresets, rangesFor } from "./size-presets";
 const BORDER = "rgba(255,255,255,0.08)";
 const GLASS_STRONG = "rgba(8,8,12,0.92)";
 
+// IDs reference entries in lib/designer/material-library.ts so that picking
+// a swatch here updates the unit's materialId, and the 3D renderer instantly
+// applies the matching PBR finish.
 const MATERIAL_SWATCHES: Array<{ id: string; bg: string; title: string }> = [
-  { id: "oak", bg: "#b7935d", title: "Oak" },
-  { id: "walnut", bg: "#7d5b3a", title: "Walnut" },
-  { id: "lacquer-white", bg: "#eee9e1", title: "Lacquer White" },
-  { id: "matte-black", bg: "#1c1c1c", title: "Matte Black" },
-  { id: "violet", bg: "#c8a9d4", title: "Violet" },
-  { id: "mint", bg: "#a0c4b8", title: "Mint" },
+  { id: "wood.oak-natural", bg: "#b7935d", title: "بلوط طبيعي" },
+  { id: "wood.walnut", bg: "#7d5b3a", title: "جوز" },
+  { id: "paint.glossy-white", bg: "#f8f8f8", title: "أبيض لامع" },
+  { id: "paint.charcoal-gray", bg: "#3a3a3e", title: "فحمي" },
+  { id: "paint.navy-blue", bg: "#1e2a4a", title: "كحلي" },
+  { id: "paint.forest-green", bg: "#2a4632", title: "أخضر غابي" },
 ];
 
 const COUNTERTOP_SWATCHES: Array<{

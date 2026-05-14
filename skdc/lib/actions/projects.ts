@@ -9,11 +9,13 @@ import { requireWorkspaceId } from "@/lib/auth-helpers";
 const ProjectInput = z.object({
   name: z.string().min(2).max(120),
   customerId: z.string().cuid().optional().nullable().or(z.literal("")),
+  customerPhone: z.string().max(40).optional().nullable(),
   status: z.nativeEnum(ProjectStatus).default("DRAFT"),
   designStyle: z.nativeEnum(DesignStyle).optional().nullable(),
   roomWidth: z.coerce.number().positive().max(20_000).optional().nullable(),
   roomDepth: z.coerce.number().positive().max(20_000).optional().nullable(),
   roomHeight: z.coerce.number().positive().max(10_000).optional().nullable(),
+  wallThickness: z.coerce.number().positive().max(1000).optional().nullable(),
   notes: z.string().max(2000).optional().nullable(),
 });
 
@@ -44,11 +46,13 @@ export async function createProject(raw: unknown) {
       workspaceId,
       name: parsed.name,
       customerId: parsed.customerId || null,
+      customerPhone: parsed.customerPhone || null,
       status: parsed.status,
       designStyle: parsed.designStyle ?? null,
       roomWidth: parsed.roomWidth ?? null,
       roomDepth: parsed.roomDepth ?? null,
       roomHeight: parsed.roomHeight ?? null,
+      wallThickness: parsed.wallThickness ?? 80,
       notes: parsed.notes || null,
       design: { create: { data: {} } },
     },
@@ -69,11 +73,13 @@ export async function updateProject(id: string, raw: unknown) {
     data: {
       name: parsed.name,
       customerId: parsed.customerId || null,
+      customerPhone: parsed.customerPhone || null,
       status: parsed.status,
       designStyle: parsed.designStyle ?? null,
       roomWidth: parsed.roomWidth ?? null,
       roomDepth: parsed.roomDepth ?? null,
       roomHeight: parsed.roomHeight ?? null,
+      wallThickness: parsed.wallThickness ?? 80,
       notes: parsed.notes || null,
     },
   });

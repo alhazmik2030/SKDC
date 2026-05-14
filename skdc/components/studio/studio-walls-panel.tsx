@@ -77,9 +77,10 @@ const SHAPE_OPTIONS: {
   labelAr: string;
 }[] = [
   { value: "SINGLE_WALL", labelAr: "جدار واحد" },
+  { value: "TWO_WALL", labelAr: "جداران متقابلان" },
   { value: "L_SHAPE", labelAr: "حرف L" },
   { value: "U_SHAPE", labelAr: "حرف U" },
-  { value: "CLOSED", labelAr: "غرفة مغلقة" },
+  { value: "CLOSED", labelAr: "مطبخ مغلق" },
   { value: "ISLAND", labelAr: "مع جزيرة" },
 ];
 

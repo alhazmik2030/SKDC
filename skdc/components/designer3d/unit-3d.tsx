@@ -48,7 +48,7 @@ interface Unit3DProps {
    * top-down room-space (corner-anchored mm). StudioShell then snaps it
    * against walls + neighbours and applies the result.
    */
-  onTransform?: (next: { x: number; y: number }) => void;
+  onTransform?: (next: { x: number; y: number; baseHeight?: number }) => void;
 }
 
 const GLASS_TINT_COLORS: Record<string, string> = {
@@ -188,7 +188,9 @@ export function Unit3D({ unit, options, selected, onSelect, overrideTransform, o
 
   // World position: from mm (room coords, top-down) to scene coords (Y up).
   const px = unit.x * MM;
-  const py = h / 2; // bottom-anchored — sits on floor
+  // baseHeight raises the unit off the floor (upper cabinets typically 1400 mm
+  // up; the user can also lift any unit via the Y handle on TransformControls).
+  const py = (unit.baseHeight ?? 0) * MM + h / 2;
   const pz = unit.y * MM;
 
   // Wall-bound units (set via the Assembly step) ignore (x, y, rotation) and
@@ -312,13 +314,19 @@ export function Unit3D({ unit, options, selected, onSelect, overrideTransform, o
       <TransformControls
         object={groupNode}
         mode="translate"
-        showY={false}
+        showY={true}
         size={0.6}
         onObjectChange={() => {
           const p = groupNode.position;
+          // Clamp Y to keep the unit from sinking below the floor.
+          if (p.y < h / 2) {
+            p.y = h / 2;
+            groupNode.position.set(p.x, p.y, p.z);
+          }
           const newX = Math.round((p.x - w / 2) / MM);
           const newY = Math.round((p.z - d / 2) / MM);
-          onTransform({ x: newX, y: newY });
+          const newBaseH = Math.round((p.y - h / 2) / MM);
+          onTransform({ x: newX, y: newY, baseHeight: newBaseH });
         }}
       />
     ) : null}

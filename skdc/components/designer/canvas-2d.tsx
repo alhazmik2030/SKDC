@@ -80,7 +80,7 @@ export function Canvas2D({ design, selectedId, onSelect, onMoveUnit }: Canvas2DP
           <Text
             x={offsetX + 6}
             y={offsetY + 6}
-            text={`الغرفة ${design.room.width} × ${design.room.depth} مم`}
+            text={`المطبخ ${design.room.width} × ${design.room.depth} مم`}
             fontSize={11}
             fill="rgba(255,255,255,0.5)"
           />

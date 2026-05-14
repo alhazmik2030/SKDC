@@ -45,13 +45,13 @@ const OPTIONS: ShapeOption[] = [
   {
     value: "CLOSED",
     labelKey: "designer.roomShape.fourWalls",
-    hintAr: "غرفة مغلقة (A + B + C + D) — يدعم الجدران الأربعة",
+    hintAr: "مطبخ مغلق (A + B + C + D) — يدعم الجدران الأربعة",
     hintEn: "Closed room (A + B + C + D) — full perimeter",
   },
   {
     value: "ISLAND",
     labelKey: "designer.roomShape.island",
-    hintAr: "غرفة مغلقة + جزيرة وسطية مستقلة",
+    hintAr: "مطبخ مغلق + جزيرة وسطية مستقلة",
     hintEn: "Closed room + a free-standing centre island",
   },
 ];
@@ -161,7 +161,7 @@ export function ShapePicker({
 
       {/* Dimensions */}
       <div className="glass rounded-2xl p-5">
-        <h3 className="mb-3 text-sm font-bold text-gradient">أبعاد الغرفة</h3>
+        <h3 className="mb-3 text-sm font-bold text-gradient">أبعاد المطبخ</h3>
         <div className="grid gap-3 sm:grid-cols-3">
           <DimField
             label="العرض (مم)"

@@ -141,7 +141,7 @@ export function ProjectsList({
 
             {p.roomWidth || p.roomDepth || p.roomHeight ? (
               <div className="mt-3 inline-flex items-center gap-1 font-mono text-[10px] text-muted-foreground">
-                الغرفة: {p.roomWidth ?? "—"} × {p.roomDepth ?? "—"} × {p.roomHeight ?? "—"} مم
+                المطبخ: {p.roomWidth ?? "—"} × {p.roomDepth ?? "—"} × {p.roomHeight ?? "—"} مم
               </div>
             ) : null}
 

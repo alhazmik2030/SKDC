@@ -260,6 +260,13 @@ model Project {
   roomWidth   Float?
   roomDepth   Float?
   roomHeight  Float?
+  // Wall thickness in mm (default 80 mm — uniform for every wall in the
+  // kitchen). The designer can override per-project at create time.
+  wallThickness  Int?         @default(80)
+  // Snapshot of the customer's phone number at the moment the project was
+  // created. Lets the workshop reach the customer even if the Customer row
+  // is unlinked or edited later.
+  customerPhone  String?
   notes       String?       @db.Text
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
