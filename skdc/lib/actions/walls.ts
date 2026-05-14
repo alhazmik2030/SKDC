@@ -61,6 +61,7 @@ const SHAPE_PRESETS: Record<
 const DEFAULT_ROOM = { width: 4000, depth: 3000, height: 2700 };
 
 const WallUpdateInput = z.object({
+  label: z.string().min(1).max(4).optional(),
   length: z.coerce.number().positive().max(20_000).optional(),
   height: z.coerce.number().positive().max(10_000).optional(),
   thickness: z.coerce.number().positive().max(500).optional(),

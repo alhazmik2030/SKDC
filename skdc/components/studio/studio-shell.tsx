@@ -2,9 +2,10 @@
 
 import * as React from "react";
 import dynamic from "next/dynamic";
+import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import type { Template } from "@prisma/client";
+import type { RoomShape, RoomWall, Template } from "@prisma/client";
 import type {
   DesignerState,
   DesignerUnit,
@@ -22,6 +23,7 @@ import { StudioInspector } from "./studio-inspector";
 import { StudioBottomBar } from "./studio-bottom-bar";
 import { StudioAIBar } from "./studio-ai-bar";
 import { StudioStatusBar } from "./studio-status-bar";
+import { StudioWallsPanel, type IslandData } from "./studio-walls-panel";
 import type {
   CameraPreset,
   TimeOfDay,
@@ -54,6 +56,9 @@ export interface StudioShellProps {
   templates: Template[];
   initialDesign: DesignerState | null;
   initialRoom: Partial<DesignerRoom>;
+  walls: RoomWall[];
+  shape: RoomShape | null;
+  island: IslandData;
 }
 
 export function StudioShell({
@@ -61,8 +66,20 @@ export function StudioShell({
   templates,
   initialDesign,
   initialRoom,
+  walls: initialWalls,
+  shape: initialShape,
+  island: initialIsland,
 }: StudioShellProps) {
   const { t } = useI18n();
+  const router = useRouter();
+  const [walls, setWalls] = React.useState<RoomWall[]>(initialWalls);
+  const [shape, setShape] = React.useState<RoomShape | null>(initialShape);
+  const [island, setIsland] = React.useState<IslandData>(initialIsland);
+  const [wallsPanelOpen, setWallsPanelOpen] = React.useState(false);
+
+  React.useEffect(() => setWalls(initialWalls), [initialWalls]);
+  React.useEffect(() => setShape(initialShape), [initialShape]);
+  React.useEffect(() => setIsland(initialIsland), [initialIsland]);
 
   const startingDesign: DesignerState = React.useMemo(() => {
     if (initialDesign && Array.isArray(initialDesign.units)) {
@@ -244,6 +261,79 @@ export function StudioShell({
         onSelect={(c) => setCategory(c)}
         templates={templates}
       />
+
+      {/* === Floating "Walls" pill, anchored above the rail. Always visible. === */}
+      <button
+        type="button"
+        onClick={() => setWallsPanelOpen((v) => !v)}
+        aria-pressed={wallsPanelOpen}
+        aria-label="البنية والجدران"
+        className="absolute end-3 top-[60px] z-[41] flex h-[34px] items-center gap-1.5 rounded-xl border px-3 text-[11px] font-bold transition-all"
+        style={{
+          background: wallsPanelOpen
+            ? "linear-gradient(135deg, var(--theme-stop-1,#a78bfa), var(--theme-stop-3,#38bdf8))"
+            : "rgba(8,8,12,0.92)",
+          color: wallsPanelOpen ? "#fff" : "rgba(255,255,255,0.85)",
+          borderColor: wallsPanelOpen
+            ? "transparent"
+            : "rgba(255,255,255,0.08)",
+          backdropFilter: "blur(28px)",
+          WebkitBackdropFilter: "blur(28px)",
+          boxShadow: wallsPanelOpen
+            ? "0 8px 24px -8px var(--theme-halo,rgba(167,139,250,0.55))"
+            : "0 20px 40px -16px rgba(0,0,0,0.65)",
+        }}
+      >
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          className="h-3.5 w-3.5"
+          aria-hidden
+        >
+          <rect x="3" y="6" width="18" height="12" rx="1" />
+          <line x1="9" y1="6" x2="9" y2="18" />
+          <line x1="15" y1="6" x2="15" y2="18" />
+        </svg>
+        <span>الجدران</span>
+        {walls.length > 0 ? (
+          <span
+            className="grid h-4 min-w-[16px] place-items-center rounded-full px-1 text-[9px] font-black"
+            style={{
+              background: wallsPanelOpen
+                ? "rgba(255,255,255,0.25)"
+                : "rgba(167,139,250,0.20)",
+              color: wallsPanelOpen ? "#fff" : "#e0d4ff",
+            }}
+          >
+            {walls.length}
+          </span>
+        ) : null}
+      </button>
+
+      {/* === Walls panel (collapsible, always reachable) === */}
+      {wallsPanelOpen ? (
+        <StudioWallsPanel
+          projectId={project.id}
+          walls={walls}
+          shape={shape}
+          island={island}
+          room={{
+            width: design.room.width,
+            depth: design.room.depth,
+          }}
+          onClose={() => setWallsPanelOpen(false)}
+          onWallChanged={(next) =>
+            setWalls((prev) => prev.map((w) => (w.id === next.id ? next : w)))
+          }
+          onShapeChanged={() => {
+            // Shape regenerates walls server-side; refresh from the server.
+            router.refresh();
+          }}
+          onIslandChanged={setIsland}
+        />
+      ) : null}
 
       {/* === Slide-out templates palette === */}
       {category ? (

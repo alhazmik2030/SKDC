@@ -1,5 +1,6 @@
 import { notFound, redirect } from "next/navigation";
-import { getProject } from "@/lib/actions/projects";
+import { db } from "@/lib/db";
+import { requireWorkspaceId } from "@/lib/auth-helpers";
 import { listTemplates } from "@/lib/actions/templates";
 import { StudioShell } from "@/components/studio/studio-shell";
 import type { DesignerState } from "@/components/designer/types";
@@ -15,8 +16,20 @@ export default async function StudioPage({
 }) {
   const { id } = await params;
   const { skipWizard } = await searchParams;
+  const workspaceId = await requireWorkspaceId();
+
   const [project, templates] = await Promise.all([
-    getProject(id),
+    db.project.findFirst({
+      where: { id, workspaceId },
+      include: {
+        customer: true,
+        design: {
+          include: {
+            walls: { orderBy: { orderIndex: "asc" } },
+          },
+        },
+      },
+    }),
     listTemplates(),
   ]);
   if (!project) notFound();
@@ -35,12 +48,25 @@ export default async function StudioPage({
     height: project.roomHeight ?? undefined,
   };
 
+  const walls = project.design?.walls ?? [];
+  const shape = project.design?.shape ?? null;
+  const island = {
+    hasIsland: project.design?.hasIsland ?? false,
+    width: project.design?.islandWidth ?? null,
+    depth: project.design?.islandDepth ?? null,
+    x: project.design?.islandX ?? null,
+    z: project.design?.islandZ ?? null,
+  };
+
   return (
     <StudioShell
       project={{ id: project.id, name: project.name }}
       templates={templates}
       initialDesign={initialDesign}
       initialRoom={initialRoom}
+      walls={walls}
+      shape={shape}
+      island={island}
     />
   );
 }
