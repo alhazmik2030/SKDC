@@ -29,6 +29,12 @@ const SHAPE_PRESETS: Record<
     { label: "A", orderIndex: 0, length: w, height: h,
       startX: 0, startZ: 0, endX: w, endZ: 0, angleDeg: 0 },
   ],
+  TWO_WALL: (w, d, h) => [
+    { label: "A", orderIndex: 0, length: w, height: h,
+      startX: 0, startZ: 0, endX: w, endZ: 0, angleDeg: 0 },
+    { label: "C", orderIndex: 2, length: w, height: h,
+      startX: w, startZ: d, endX: 0, endZ: d, angleDeg: 180 },
+  ],
   L_SHAPE: (w, d, h) => [
     { label: "A", orderIndex: 0, length: w, height: h,
       startX: 0, startZ: 0, endX: w, endZ: 0, angleDeg: 0 },

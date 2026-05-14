@@ -21,12 +21,7 @@ import type { DesignerUnit } from "@/components/designer/types";
 import { useI18n } from "@/components/i18n-provider";
 import { cn } from "@/lib/utils";
 import { DimensionSlider } from "./dimension-slider";
-import {
-  SizePresets,
-  WIDTH_RANGE,
-  HEIGHT_RANGE,
-  DEPTH_RANGE,
-} from "./size-presets";
+import { SizePresets, rangesFor } from "./size-presets";
 
 const BORDER = "rgba(255,255,255,0.08)";
 const GLASS_STRONG = "rgba(8,8,12,0.92)";
@@ -169,36 +164,44 @@ export function StudioInspector({
             </div>
             <SizePresets
               category={unit.category}
+              templateName={unit.templateName}
               axis="width"
               value={unit.width}
               onPick={(mm) => onUpdate({ width: mm })}
             />
 
             <div className="mt-2.5 space-y-0.5">
-              <DimensionSlider
-                label={t("designer.inspector.widthShort")}
-                value={unit.width}
-                min={WIDTH_RANGE[0]}
-                max={WIDTH_RANGE[1]}
-                step={10}
-                onChange={(v) => onUpdate({ width: v })}
-              />
-              <DimensionSlider
-                label={t("designer.inspector.heightShort")}
-                value={unit.height}
-                min={HEIGHT_RANGE[0]}
-                max={HEIGHT_RANGE[1]}
-                step={10}
-                onChange={(v) => onUpdate({ height: v })}
-              />
-              <DimensionSlider
-                label={t("designer.inspector.depthShort")}
-                value={unit.depth}
-                min={DEPTH_RANGE[0]}
-                max={DEPTH_RANGE[1]}
-                step={10}
-                onChange={(v) => onUpdate({ depth: v })}
-              />
+              {(() => {
+                const ranges = rangesFor(unit.category, unit.templateName);
+                return (
+                  <>
+                    <DimensionSlider
+                      label={t("designer.inspector.widthShort")}
+                      value={unit.width}
+                      min={ranges.width[0]}
+                      max={ranges.width[1]}
+                      step={10}
+                      onChange={(v) => onUpdate({ width: v })}
+                    />
+                    <DimensionSlider
+                      label={t("designer.inspector.heightShort")}
+                      value={unit.height}
+                      min={ranges.height[0]}
+                      max={ranges.height[1]}
+                      step={10}
+                      onChange={(v) => onUpdate({ height: v })}
+                    />
+                    <DimensionSlider
+                      label={t("designer.inspector.depthShort")}
+                      value={unit.depth}
+                      min={ranges.depth[0]}
+                      max={ranges.depth[1]}
+                      step={10}
+                      onChange={(v) => onUpdate({ depth: v })}
+                    />
+                  </>
+                );
+              })()}
             </div>
 
             {/* Volume caption — recomputed live from current dimensions. */}

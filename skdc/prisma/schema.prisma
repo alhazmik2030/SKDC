@@ -279,6 +279,7 @@ model Project {
 // Studio room shape — drives wall auto-generation when a design is initialized.
 enum RoomShape {
   SINGLE_WALL    // one wall: A
+  TWO_WALL       // two parallel walls: A + C (galley kitchen)
   L_SHAPE        // two perpendicular walls: A + B
   U_SHAPE        // three walls: A + B + C
   CLOSED         // four walls: A + B + C + D
